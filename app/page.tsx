@@ -128,46 +128,26 @@ export default function LandingPage() {
         <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-[#C9A96E]/[0.08] blur-3xl pointer-events-none" />
 
         {/* شارة "جديد" */}
-        <motion.div
-          initial={reduce ? false : { opacity: 0, scale: 0.85 }}
-          animate={reduce ? undefined : { opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: EASE }}
-          className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#C9A96E]/30 bg-white/70 backdrop-blur-sm px-4 py-1.5 text-xs font-bold text-[#A8853A] shadow-sm"
-        >
+        <div className="hero-fade-1 mb-5 inline-flex items-center gap-2 rounded-full border border-[#C9A96E]/30 bg-white/70 backdrop-blur-sm px-4 py-1.5 text-xs font-bold text-[#A8853A] shadow-sm">
           <Sparkles size={13} className="text-[#C9A96E]" />
           منصة التوجيه التربوي الرقمية — قسم التربية البدنية
-        </motion.div>
+        </div>
 
         {/* العنوان الرئيسي */}
-        <motion.h1
-          initial={reduce ? false : { opacity: 0, y: 24 }}
-          animate={reduce ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: EASE, delay: 0.08 }}
-          className="max-w-2xl text-4xl sm:text-5xl font-extrabold text-[#2A1418] leading-[1.2] tracking-tight"
-        >
+        <h1 className="hero-fade-2 max-w-2xl text-4xl sm:text-5xl font-extrabold text-[#2A1418] leading-[1.2] tracking-tight">
           إدارة الإشراف التربوي{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#5C1523] to-[#7A1E30]">
             بدقة رقمية كاملة
           </span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={reduce ? false : { opacity: 0, y: 18 }}
-          animate={reduce ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE, delay: 0.16 }}
-          className="mt-5 max-w-lg text-[15px] text-[#8A7A72] leading-relaxed"
-        >
+        <p className="hero-fade-3 mt-5 max-w-lg text-[15px] text-[#8A7A72] leading-relaxed">
           منصة متكاملة لرصد أداء الموجهين، متابعة تغطية المدارس، وإصدار
           الاستمارات الرسمية — استبدالاً كاملاً لملفات Excel والنماذج الورقية.
-        </motion.p>
+        </p>
 
         {/* أزرار */}
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 14 }}
-          animate={reduce ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: EASE, delay: 0.26 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-3"
-        >
+        <div className="hero-fade-4 mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/login"
             className="btn-primary text-base px-7 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-[#5C1523]/20"
@@ -181,7 +161,7 @@ export default function LandingPage() {
           >
             استعراض الداشبورد
           </Link>
-        </motion.div>
+        </div>
       </section>
 
       {/* ②  F E A T U R E S   G R I D ──────────────────────────── */}
@@ -230,20 +210,16 @@ export default function LandingPage() {
 
           <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             {STATS.map((s, i) => (
-              <motion.div
+              <div
                 key={s.label}
-                variants={reduce ? undefined : itemVariants}
-                initial={reduce ? undefined : "hidden"}
-                whileInView={reduce ? undefined : "show"}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
                 className="space-y-1"
+                style={{ animation: `fadeUp 0.5s ease forwards`, animationDelay: `${i * 0.1}s` }}
               >
                 <p className="text-4xl font-extrabold text-[#DFC48E] font-sans tracking-tight">
                   {s.value}
                 </p>
                 <p className="text-sm text-white/60 font-medium">{s.label}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -274,18 +250,18 @@ export default function LandingPage() {
 
 /* ════ مكوّنات مساعدة ════════════════════════════════════════════ */
 
-/* متغيّرات Framer */
+/* متغيّرات Framer — محتفظ بها للـ hover effects فقط */
 const containerVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 1, y: 0 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] } },
 };
 
-/* FadeSection — تلاشٍ عند التمرير */
+/* FadeSection — تلاشٍ عند التمرير (CSS بدل framer لضمان الظهور) */
 function FadeSection({
   children,
   delay = 0,
@@ -295,17 +271,10 @@ function FadeSection({
   delay?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
   return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 18 }}
-      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.55, ease: EASE, delay }}
-      className={className}
-    >
+    <div className={className} style={{ animation: `fadeUp 0.6s ease forwards`, animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
