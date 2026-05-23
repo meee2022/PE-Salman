@@ -1,0 +1,51 @@
+"use client";
+
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/components/AuthProvider";
+
+function supervisorHome(supervisorId?: string) {
+  return supervisorId ? `/dashboard/supervisors/${supervisorId}` : "/dashboard/settings";
+}
+
+function isAllowedForSupervisor(pathname: string, home: string) {
+  return (
+    pathname === home ||
+    pathname === "/dashboard/settings" ||
+    pathname.startsWith("/dashboard/forms") ||
+    pathname.startsWith("/dashboard/teachers") ||
+    pathname.startsWith("/dashboard/activity") ||
+    pathname.startsWith("/dashboard/remote") ||
+    pathname.startsWith("/dashboard/compliance")
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role === "supervisor") {
+      const home = supervisorHome(user.supervisorId);
+      if (!isAllowedForSupervisor(pathname, home)) router.replace(home);
+    }
+  }, [loading, user, pathname, router]);
+
+  // أثناء التحميل أو إعادة التوجيه
+  const redirectingSupervisor =
+    user?.role === "supervisor" && !isAllowedForSupervisor(pathname, supervisorHome(user.supervisorId));
+
+  if (loading || !user || redirectingSupervisor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
+      </div>
+    );
+  }
+
+  return <AppShell>{children}</AppShell>;
+}

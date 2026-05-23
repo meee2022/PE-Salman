@@ -1,0 +1,349 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/components/AuthProvider";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Modal, ModalFooter, TxtField, SelectField } from "@/components/ui/Modal";
+import { SearchSelect } from "@/components/ui/SearchSelect";
+import { buildDomains } from "@/components/coordinatorTemplate";
+import { ClipboardList, Plus, ChevronLeft, FileSignature, CircleCheck, Clock, Trash2, Search, ArrowRight, Users, LayoutList } from "lucide-react";
+import { useActiveYear } from "@/hooks/useActiveYear";
+
+const WEEKDAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
+
+export default function FormsPage() {
+  const { token, user } = useAuth();
+  const YEAR = useActiveYear();
+  const router = useRouter();
+  const isAdmin = user?.role === "admin";
+  const forms = useQuery(api.coordinatorForms.list, token ? { academicYear: YEAR, token } : "skip");
+  const supOptions = useQuery(api.supervisors.list, token && isAdmin ? { token } : "skip");
+  const create = useMutation(api.coordinatorForms.create);
+  const removeForm = useMutation(api.coordinatorForms.remove);
+
+  const [showNew, setShowNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selSup, setSelSup] = useState<{ id: string; name: string } | "all" | null>(null);
+  const [hdr, setHdr] = useState<{ schoolName: string; schoolId?: string; supervisorId?: string; supervisorName?: string; coordinatorName: string; subject: string; day: string; date: string }>({ schoolName: "", coordinatorName: "", subject: "التربية البدنية", day: "الأحد", date: new Date().toISOString().slice(0, 10) });
+
+  // مدارس الموجه المختار فقط (الأدمن: حسب اختياره؛ الموجه: مدارسه)
+  const formSupId = isAdmin ? hdr.supervisorId : (user?.supervisorId as string | undefined);
+  const assigned = useQuery(api.assignments.listBySupervisorYear,
+    token && formSupId ? { supervisorId: formSupId as Id<"supervisors">, academicYear: YEAR, token } : "skip");
+  const schoolOpts = (assigned ?? [])
+    .filter((a) => a.school)
+    .map((a) => ({ id: a.school!._id as string, name: a.school!.name, sub: a.school!.gender === "male" ? "بنين" : "بنات" }));
+
+  if (!forms) return <Spinner />;
+
+  async function createForm() {
+    if (!hdr.schoolName.trim() || !hdr.coordinatorName.trim()) return;
+    if (isAdmin && !hdr.supervisorId) return;
+    setSaving(true);
+    try {
+      const id = await create({
+        schoolName: hdr.schoolName, schoolId: hdr.schoolId as Id<"schools"> | undefined,
+        supervisorId: hdr.supervisorId as Id<"supervisors"> | undefined,
+        coordinatorName: hdr.coordinatorName,
+        subject: hdr.subject, day: hdr.day, date: hdr.date, academicYear: YEAR,
+        domains: buildDomains(),
+        token: token ?? undefined,
+      });
+      router.push(`/dashboard/forms/${id}`);
+    } finally { setSaving(false); }
+  }
+
+  const norm = (s: string) => (s || "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه");
+  const searching = search.trim().length > 0;
+  const matchSearch = (f: typeof forms[number]) =>
+    [f.coordinatorName, f.schoolName, f.supervisorName].some((x) => norm(x).includes(norm(search)));
+
+  // تجميع حسب الموجه (للأدمن)
+  const groupMap = new Map<string, { id: string; name: string; total: number; submitted: number }>();
+  forms.forEach((f) => {
+    const g = groupMap.get(f.supervisorId) ?? { id: f.supervisorId, name: f.supervisorName, total: 0, submitted: 0 };
+    g.total++; if (f.status === "submitted") g.submitted++;
+    groupMap.set(f.supervisorId, g);
+  });
+  const groups = Array.from(groupMap.values()).sort((a, b) => b.total - a.total);
+
+  async function del(fid: string) {
+    if (confirm("حذف الاستمارة؟")) await removeForm({ id: fid as Id<"coordinatorForms">, token: token ?? undefined });
+  }
+
+  // تحديد ما يُعرض
+  let listForms = forms;
+  let heading: string | null = null;
+  if (searching) { listForms = forms.filter(matchSearch); heading = `نتائج البحث (${listForms.length})`; }
+  else if (isAdmin && selSup === null) { listForms = []; }
+  else if (selSup && selSup !== "all") { listForms = forms.filter((f) => f.supervisorId === selSup.id); heading = `استمارات: ${selSup.name}`; }
+  else if (selSup === "all") { heading = `كل الاستمارات (${forms.length})`; }
+
+  const showGrid = isAdmin && !searching && selSup === null;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="استمارات الإشراف على المنسق"
+        subtitle={isAdmin ? `${forms.length} استمارة · ${groups.length} موجه` : "استماراتك الإشرافية الحالية"}
+        icon={<ClipboardList size={26} />}
+        action={
+          <button onClick={() => setShowNew(true)} className="btn-primary shadow-lg shadow-primary/10">
+            <Plus size={16} /> استمارة جديدة
+          </button>
+        }
+      />
+
+      {/* البحث والتحكم */}
+      <div className="card-luxurious p-4 flex items-center gap-3 animate-in focus-within:ring-1 focus-within:ring-gold/45 focus-within:border-gold/60">
+        <Search size={18} className="text-primary/50 mr-1" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث باسم المنسق أو المدرسة أو الموجه..."
+          className="flex-1 bg-transparent outline-none text-xs font-semibold text-[#2A1418] placeholder:text-stone-400"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">
+            مسح البحث
+          </button>
+        )}
+      </div>
+
+      {forms.length === 0 ? (
+        <div className="card-luxurious p-16 text-center text-stone-500 text-sm animate-in flex flex-col items-center justify-center gap-3">
+          <ClipboardList className="w-12 h-12 text-gold/40 animate-pulse" />
+          <p className="font-extrabold text-[#5C1523] text-base">لا توجد استمارات حالياً</p>
+          <p className="text-xs text-stone-400 max-w-xs">ابدأ بإنشاء استمارة إشرافية جديدة لتوثيق الأداء الرياضي والتقييمات الميدانية.</p>
+          <button onClick={() => setShowNew(true)} className="btn-primary mt-2 text-xs !py-2.5">
+            <Plus size={14} /> إنشاء استمارة الآن
+          </button>
+        </div>
+      ) : showGrid ? (
+        <div className="space-y-6 animate-in">
+          <h2 className="text-xs font-extrabold text-[#5C1523] tracking-wider uppercase opacity-85">مجموعات الموجهين وإحصائيات التقديم</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button
+              onClick={() => setSelSup("all")}
+              className="card-luxurious card-luxurious-hover p-6 flex items-center gap-4 text-right bg-gradient-to-l from-[#5C1523] to-[#4A0F1B] border-none shadow-xl text-white relative overflow-hidden group"
+            >
+              <div className="pattern-arabesque absolute inset-0 opacity-[0.2] pointer-events-none" />
+              <div className="absolute -left-6 -top-6 w-24 h-24 rounded-full bg-gold/10 blur-xl pointer-events-none" />
+              <span className="icon-orb bg-white/10 ring-1 ring-white/20 text-gold shadow-md group-hover:scale-105 transition-transform duration-300">
+                <LayoutList size={20} />
+              </span>
+              <div className="flex-1 min-w-0 relative">
+                <p className="font-extrabold text-sm text-white">كل الاستمارات</p>
+                <p className="text-[11px] text-white/70 mt-1 font-semibold">{forms.length} استمارة إشرافية مسجلة</p>
+              </div>
+              <ChevronLeft size={18} className="text-white/60 transform group-hover:-translate-x-1 transition-transform duration-300" />
+            </button>
+
+            {groups.map((g, idx) => (
+              <button
+                key={g.id}
+                onClick={() => setSelSup({ id: g.id, name: g.name })}
+                className="card-luxurious card-luxurious-hover p-6 flex items-center gap-4 text-right group relative overflow-hidden"
+                style={{ animationDelay: `${(idx + 1) * 30}ms` }}
+              >
+                <span className="icon-orb bg-gradient-to-br from-[#DFC48E] to-[#A8853A] text-white flex items-center justify-center font-extrabold shrink-0 shadow-md text-xs border border-gold/25 group-hover:rotate-3 transition-transform duration-300">
+                  {g.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-extrabold text-xs text-[#2A1418] truncate group-hover:text-primary transition-colors">{g.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-stone-500 font-bold">{g.total} استمارات</span>
+                    <span className="w-1 h-1 rounded-full bg-gold/50" />
+                    <span className="text-[10px] text-emerald-600 font-bold">{g.submitted} معتمدة</span>
+                  </div>
+                </div>
+                <ChevronLeft size={18} className="text-[#C7B8A6] transform group-hover:-translate-x-1 transition-transform duration-300" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 animate-in">
+          {/* رأس السياق */}
+          {(heading && (selSup || searching)) && (
+            <div className="flex items-center justify-between gap-4 flex-wrap border-b border-gold/10 pb-3">
+              <div className="flex items-center gap-2">
+                {isAdmin && !searching && (
+                  <button onClick={() => setSelSup(null)} className="btn-ghost !py-2 !px-3 text-xs font-bold flex items-center gap-1">
+                    <ArrowRight size={14} /> العودة للموجهين
+                  </button>
+                )}
+                <h2 className="text-sm font-extrabold text-[#5C1523] flex items-center gap-2">
+                  <span className="w-1.5 h-3 rounded bg-primary" />
+                  {heading}
+                </h2>
+              </div>
+            </div>
+          )}
+
+          {listForms.length === 0 ? (
+            <div className="card-luxurious p-12 text-center text-stone-500 text-sm animate-in flex flex-col items-center justify-center gap-2">
+              <Search className="w-8 h-8 text-gold/40" />
+              <p className="font-extrabold text-[#5C1523] text-xs">لا توجد استمارات تطابق هذا البحث</p>
+              <p className="text-[11px] text-stone-400">تأكد من كتابة الاسم أو اسم المدرسة بشكل صحيح.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {listForms.map((f, idx) => (
+                <div
+                  key={f._id}
+                  className="card-luxurious card-luxurious-hover p-5 flex items-center gap-4 group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-gold/30"
+                  style={{ animationDelay: `${idx * 40}ms` }}
+                >
+                  <span className="icon-orb bg-primary/5 text-primary shrink-0 group-hover:scale-105 transition-transform duration-300">
+                    <FileSignature size={20} />
+                  </span>
+                  
+                  <Link href={`/dashboard/forms/${f._id}`} className="flex-1 min-w-0">
+                    {/* اسم المدرسة كاملاً في سطر مستقل */}
+                    <p className="font-extrabold text-[#2A1418] text-xs leading-snug group-hover:text-primary transition-colors">
+                      {f.schoolName}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {/* اسم المنسق */}
+                      <span className="text-[10px] text-stone-500 font-bold">{f.coordinatorName}</span>
+                      <span className="text-stone-300 text-[10px]">•</span>
+                      <span className="text-[10px] text-stone-500 font-bold">{f.date}</span>
+                      {isAdmin && f.supervisorName && (
+                        <>
+                          <span className="text-stone-300 text-[10px]">•</span>
+                          {/* اسم الموجه بدون اقتطاع */}
+                          <span className="text-[10px] text-[#A8853A] font-extrabold">{f.supervisorName}</span>
+                        </>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    {f.status === "submitted" ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-200">
+                        <CircleCheck size={11} className="text-emerald-600" /> معتمدة
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 border border-amber-200">
+                        <Clock size={11} className="text-amber-600" /> مسودة
+                      </span>
+                    )}
+
+                    <button
+                      onClick={() => del(f._id)}
+                      className="text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl p-2 shrink-0 transition-colors duration-150"
+                      title="حذف الاستمارة"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    <Link href={`/dashboard/forms/${f._id}`} className="text-stone-300 hover:text-[#5C1523] p-1 shrink-0 transition-colors duration-150">
+                      <ChevronLeft size={18} />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* نافذة إنشاء — البيانات الأساسية فقط، ثم تُكمل في صفحة الاستمارة */}
+      {showNew && (
+        <Modal title="استمارة إشرافية جديدة للمنسق" onClose={() => setShowNew(false)}>
+          <div className="p-6 space-y-4">
+            {isAdmin && (
+              <SearchSelect
+                label="الموجه المسؤول"
+                required
+                value={hdr.supervisorName ?? ""}
+                options={(supOptions ?? []).map((s) => ({
+                  id: s._id,
+                  name: s.name,
+                  sub: s.gender === "male" ? "ذكر" : "أنثى",
+                }))}
+                onSelect={(name, id) =>
+                  setHdr({ ...hdr, supervisorName: name, supervisorId: id, schoolName: "", schoolId: undefined })
+                }
+                placeholder="اختر الموجه لتفعيل مدارسه..."
+              />
+            )}
+            
+            <SearchSelect
+              label="المدرسة المستهدفة"
+              required
+              value={hdr.schoolName}
+              options={schoolOpts}
+              onSelect={(name, id) => setHdr({ ...hdr, schoolName: name, schoolId: id })}
+              placeholder={
+                isAdmin && !hdr.supervisorId
+                  ? "الرجاء اختيار الموجه أولًا لعرض مدارسه المسندة"
+                  : schoolOpts.length
+                  ? "اختر المدرسة الرياضية..."
+                  : "لا توجد مدارس مسندة لهذا الموجه"
+              }
+            />
+
+            <TxtField
+              label="اسم المنسق المعني"
+              required
+              value={hdr.coordinatorName}
+              onChange={(v) => setHdr({ ...hdr, coordinatorName: v })}
+              placeholder="الاسم الثلاثي للمنسق الرياضي..."
+            />
+
+            <div className="grid grid-cols-3 gap-3">
+              <TxtField
+                label="المادة"
+                value={hdr.subject}
+                onChange={(v) => setHdr({ ...hdr, subject: v })}
+              />
+              <SelectField
+                label="اليوم"
+                value={hdr.day}
+                onChange={(v) => setHdr({ ...hdr, day: v })}
+                options={WEEKDAYS.map((d) => [d, d] as const)}
+              />
+              <div>
+                <label className="block text-[11px] font-bold text-[#2A1418] mb-1.5">التاريخ</label>
+                <input
+                  type="date"
+                  value={hdr.date}
+                  onChange={(e) => setHdr({ ...hdr, date: e.target.value })}
+                  className="w-full bg-[#FCF9F2] text-[#2A1418] border border-gold/25 focus:border-[#5C1523] focus:ring-1 focus:ring-[#5C1523] text-xs font-semibold px-3 py-2.5 rounded-xl transition-all"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            <div className="bg-gold/5 border border-gold/20 rounded-2xl p-4 text-[11px] text-[#A8853A] font-semibold leading-relaxed flex items-start gap-2">
+              <ClipboardList size={16} className="text-gold shrink-0 mt-0.5" />
+              <span>
+                سيتم إنشاء المسودة الأساسية للاستمارة الآن. ستتمكن من تقييم مجالات الأداء الثمانية، تدوين الأدلة والشواهد، وإضافة التواقيع الرسمية فور المتابعة.
+              </span>
+            </div>
+          </div>
+          
+          <ModalFooter
+            onClose={() => setShowNew(false)}
+            onSave={createForm}
+            saving={saving}
+            saveLabel="إنشاء ومتابعة التقييم"
+            disabled={!hdr.schoolName.trim() || !hdr.coordinatorName.trim() || (isAdmin && !hdr.supervisorId)}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function Spinner() {
+  return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-10 h-10 rounded-full border-4 border-gold/30 border-t-gold animate-spin" /></div>;
+}
