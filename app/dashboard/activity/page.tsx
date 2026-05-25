@@ -10,6 +10,7 @@ import { PrintButton, PrintHeader } from "@/components/ui/PrintReport";
 import {
   CalendarDays, ChevronRight, ChevronLeft, X, Eraser,
   Users, HelpCircle, Check, Info, FileDown, RotateCcw,
+  BarChart2, TrendingUp, TrendingDown, Award, AlertTriangle,
 } from "lucide-react";
 
 import { useActiveYear } from "@/hooks/useActiveYear";
@@ -46,7 +47,7 @@ const AR_MONTHS = ["يناير","فبراير","مارس","أبريل","مايو
 
 export default function ActivityPage() {
   const YEAR = useActiveYear();
-  const [tab, setTab] = useState<"week" | "month" | "summary">("week");
+  const [tab, setTab] = useState<"week" | "month" | "summary" | "analysis">("week");
   return (
     <div className="space-y-6">
       <PageHeader
@@ -61,9 +62,14 @@ export default function ActivityPage() {
         <TabBtn active={tab === "week"} onClick={() => setTab("week")}>الجدول الأسبوعي</TabBtn>
         <TabBtn active={tab === "month"} onClick={() => setTab("month")}>الجدول الشهري</TabBtn>
         <TabBtn active={tab === "summary"} onClick={() => setTab("summary")}>التقرير السنوي العام</TabBtn>
+        <TabBtn active={tab === "analysis"} onClick={() => setTab("analysis")}>
+          <span className="flex items-center gap-1.5"><BarChart2 size={13} />تحليل الأداء</span>
+        </TabBtn>
       </div>
 
-      {tab === "summary" ? <AnnualSummary /> : <EntryGrid mode={tab} />}
+      {tab === "summary" ? <AnnualSummary />
+        : tab === "analysis" ? <PerformanceAnalysis />
+        : <EntryGrid mode={tab} />}
     </div>
   );
 }
@@ -788,6 +794,316 @@ function AnnualSummary() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────── تحليل الأداء ─────────────────────── */
+
+// مجموعات الأنشطة للتحليل
+const ANALYSIS_GROUPS = [
+  {
+    key: "visits",
+    label: "الزيارات الميدانية",
+    codes: ["VS", "CL"] as Code[],
+    color: "#10b981",
+    bg: "bg-emerald-500",
+    lightBg: "bg-emerald-50",
+    textColor: "text-emerald-700",
+    border: "border-emerald-200",
+  },
+  {
+    key: "office",
+    label: "العمل المكتبي",
+    codes: ["OF"] as Code[],
+    color: "#5C1523",
+    bg: "bg-[#5C1523]",
+    lightBg: "bg-rose-50",
+    textColor: "text-[#5C1523]",
+    border: "border-rose-200",
+  },
+  {
+    key: "devMeetings",
+    label: "التطوير والاجتماعات",
+    codes: ["TR", "OL", "MT"] as Code[],
+    color: "#0ea5e9",
+    bg: "bg-sky-500",
+    lightBg: "bg-sky-50",
+    textColor: "text-sky-700",
+    border: "border-sky-200",
+  },
+  {
+    key: "missions",
+    label: "المهام والأنشطة",
+    codes: ["SP", "VP", "AC"] as Code[],
+    color: "#f59e0b",
+    bg: "bg-amber-500",
+    lightBg: "bg-amber-50",
+    textColor: "text-amber-700",
+    border: "border-amber-200",
+  },
+  {
+    key: "leave",
+    label: "الإجازات والأذونات",
+    codes: ["LV", "SL", "HC", "CA", "WP"] as Code[],
+    color: "#f97316",
+    bg: "bg-orange-500",
+    lightBg: "bg-orange-50",
+    textColor: "text-orange-700",
+    border: "border-orange-200",
+  },
+  {
+    key: "absent",
+    label: "الغياب بدون عذر",
+    codes: ["AB"] as Code[],
+    color: "#ef4444",
+    bg: "bg-red-500",
+    lightBg: "bg-red-50",
+    textColor: "text-red-700",
+    border: "border-red-200",
+  },
+] as const;
+
+type SortKey = "visits" | "office" | "devMeetings" | "missions" | "leave" | "absent" | "total" | "name";
+
+function PerformanceAnalysis() {
+  const { token, user } = useAuth();
+  const YEAR = useActiveYear();
+  const isSupervisor = user?.role === "supervisor";
+  const summaries = useQuery(api.activity.summaries, token ? { academicYear: YEAR, token } : "skip");
+  const [sortBy, setSortBy] = useState<SortKey>("visits");
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const [highlight, setHighlight] = useState<string | null>(null);
+
+  if (!summaries) return (
+    <div className="flex items-center justify-center h-72">
+      <div className="w-10 h-10 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
+    </div>
+  );
+
+  // حساب قيم كل مجموعة لكل موجه
+  const rows = summaries.map((s) => {
+    const get = (c: Code) => ((s as Record<string, unknown>)[c] as number) ?? 0;
+    const groups: Record<string, number> = {};
+    for (const g of ANALYSIS_GROUPS) {
+      groups[g.key] = g.codes.reduce((sum, c) => sum + get(c), 0);
+    }
+    const total = Object.values(groups).reduce((a, b) => a + b, 0);
+    return { ...s, groups, total };
+  });
+
+  // ترتيب
+  function toggleSort(key: SortKey) {
+    if (sortBy === key) setSortDir(d => d === "desc" ? "asc" : "desc");
+    else { setSortBy(key); setSortDir("desc"); }
+  }
+  const sorted = [...rows].sort((a, b) => {
+    const va = sortBy === "name" ? (a.supervisor?.name ?? "") : sortBy === "total" ? a.total : (a.groups[sortBy] ?? 0);
+    const vb = sortBy === "name" ? (b.supervisor?.name ?? "") : sortBy === "total" ? b.total : (b.groups[sortBy] ?? 0);
+    if (typeof va === "string") return sortDir === "asc" ? va.localeCompare(vb as string, "ar") : (vb as string).localeCompare(va, "ar");
+    return sortDir === "desc" ? (vb as number) - (va as number) : (va as number) - (vb as number);
+  });
+
+  // إجماليات وأعلى قيم لكل مجموعة
+  const totals: Record<string, number> = {};
+  const maxVals: Record<string, number> = {};
+  for (const g of ANALYSIS_GROUPS) {
+    totals[g.key] = rows.reduce((s, r) => s + r.groups[g.key], 0);
+    maxVals[g.key] = Math.max(...rows.map(r => r.groups[g.key]), 1);
+  }
+  const totalAll = rows.reduce((s, r) => s + r.total, 0);
+  const maxTotal = Math.max(...rows.map(r => r.total), 1);
+  const maxVisits = maxVals["visits"];
+
+  // أفضل موجه في الزيارات
+  const topVisitor = [...rows].sort((a, b) => b.groups.visits - a.groups.visits)[0];
+  // أكثر موجه إجازة
+  const topLeave = [...rows].sort((a, b) => b.groups.leave - a.groups.leave)[0];
+  // من لديه غياب
+  const absentCount = rows.filter(r => r.groups.absent > 0).length;
+
+  return (
+    <div className="space-y-6 animate-in">
+
+      {/* بطاقات KPI العليا */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {ANALYSIS_GROUPS.map((g) => (
+          <button
+            key={g.key}
+            onClick={() => toggleSort(g.key as SortKey)}
+            className={`card-luxurious p-4 text-right transition-all hover:shadow-lg group relative overflow-hidden ${sortBy === g.key ? "ring-2 ring-offset-1" : ""}`}
+            style={{ '--ring-color': g.color } as React.CSSProperties}
+          >
+            <div className={`absolute inset-x-0 top-0 h-1 ${g.bg}`} />
+            <div className={`text-2xl font-black mb-1 ${g.textColor}`}>{totals[g.key]}</div>
+            <div className="text-[10px] font-extrabold text-stone-500 leading-tight">{g.label}</div>
+            <div className="text-[9px] font-bold text-stone-400 mt-0.5">
+              {totalAll > 0 ? `${Math.round(totals[g.key] / totalAll * 100)}%` : "—"}
+            </div>
+            {sortBy === g.key && (
+              <span className={`absolute top-2 left-2 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full ${g.lightBg} ${g.textColor} border ${g.border}`}>
+                {sortDir === "desc" ? "↓" : "↑"}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* نبذة سريعة */}
+      {!isSupervisor && rows.length > 1 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {topVisitor && (
+            <div className="card-luxurious p-4 flex items-center gap-3 border-r-4 border-emerald-400">
+              <Award size={22} className="text-emerald-500 shrink-0" />
+              <div>
+                <div className="text-[10px] font-bold text-stone-400">أعلى عدد زيارات</div>
+                <div className="text-sm font-extrabold text-[#2A1418] leading-tight">{topVisitor.supervisor?.name ?? "—"}</div>
+                <div className="text-xs font-bold text-emerald-600">{topVisitor.groups.visits} زيارة</div>
+              </div>
+            </div>
+          )}
+          {topLeave && (
+            <div className="card-luxurious p-4 flex items-center gap-3 border-r-4 border-orange-400">
+              <TrendingDown size={22} className="text-orange-500 shrink-0" />
+              <div>
+                <div className="text-[10px] font-bold text-stone-400">أكثر أيام إجازة</div>
+                <div className="text-sm font-extrabold text-[#2A1418] leading-tight">{topLeave.supervisor?.name ?? "—"}</div>
+                <div className="text-xs font-bold text-orange-600">{topLeave.groups.leave} يوم</div>
+              </div>
+            </div>
+          )}
+          <div className={`card-luxurious p-4 flex items-center gap-3 border-r-4 ${absentCount > 0 ? "border-red-400" : "border-emerald-400"}`}>
+            {absentCount > 0
+              ? <AlertTriangle size={22} className="text-red-500 shrink-0" />
+              : <TrendingUp size={22} className="text-emerald-500 shrink-0" />}
+            <div>
+              <div className="text-[10px] font-bold text-stone-400">غياب بدون عذر</div>
+              <div className={`text-2xl font-black ${absentCount > 0 ? "text-red-600" : "text-emerald-600"}`}>{absentCount}</div>
+              <div className="text-[10px] font-bold text-stone-400">موجه</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* الجدول التفصيلي */}
+      <div className="card-luxurious overflow-hidden">
+        {/* رأس الجدول — رسالة الترتيب */}
+        <div className="px-5 py-3 border-b border-gold/10 bg-gradient-to-l from-white to-[#FDFAF5] flex items-center justify-between flex-wrap gap-2">
+          <p className="text-xs font-extrabold text-[#5C1523] flex items-center gap-2">
+            <BarChart2 size={14} className="text-gold" />
+            تحليل تفصيلي لنشاط كل موجه — {YEAR}
+          </p>
+          <p className="text-[10px] font-semibold text-stone-400">
+            اضغط على أي بطاقة أعلاه لترتيب القائمة حسبها
+          </p>
+        </div>
+
+        <div className="divide-y divide-gold/8">
+          {sorted.map((row, idx) => {
+            const isHighlighted = highlight === row._id;
+            const name = row.supervisor?.name ?? "—";
+            return (
+              <div
+                key={row._id}
+                onClick={() => setHighlight(isHighlighted ? null : row._id)}
+                className={`px-4 sm:px-6 py-4 cursor-pointer transition-all ${isHighlighted ? "bg-gold/[0.06]" : idx % 2 ? "bg-stone-50/30" : "bg-white"} hover:bg-gold/[0.04]`}
+              >
+                {/* صف العنوان */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-black flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="font-extrabold text-sm text-[#2A1418]">{name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-stone-400">
+                      إجمالي الأيام المرصودة:
+                    </span>
+                    <span className="text-sm font-black text-[#2A1418]">{row.total}</span>
+                    <span className="hidden sm:inline text-[10px] font-bold text-sky-600 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">
+                      {row.schoolingDays} يوم تمدرس
+                    </span>
+                  </div>
+                </div>
+
+                {/* شريط التوزيع النسبي */}
+                {row.total > 0 && (
+                  <div className="flex h-2.5 rounded-full overflow-hidden mb-3 gap-px">
+                    {ANALYSIS_GROUPS.map((g) => {
+                      const pct = row.groups[g.key] / row.total * 100;
+                      if (pct < 0.5) return null;
+                      return (
+                        <div
+                          key={g.key}
+                          className={`${g.bg} transition-all`}
+                          style={{ width: `${pct}%` }}
+                          title={`${g.label}: ${row.groups[g.key]} (${Math.round(pct)}%)`}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* شبكة المجموعات */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {ANALYSIS_GROUPS.map((g) => {
+                    const val = row.groups[g.key];
+                    const pct = maxVals[g.key] > 0 ? val / maxVals[g.key] : 0;
+                    return (
+                      <div key={g.key} className={`rounded-xl p-2.5 ${g.lightBg} border ${g.border} relative overflow-hidden`}>
+                        {/* شريط خلفي */}
+                        <div
+                          className={`absolute bottom-0 left-0 right-0 ${g.bg} opacity-10 transition-all`}
+                          style={{ height: `${pct * 100}%` }}
+                        />
+                        <div className={`relative text-xl font-black ${g.textColor} leading-none`}>{val}</div>
+                        <div className="relative text-[9px] font-extrabold text-stone-500 mt-1 leading-tight">{g.label}</div>
+                        {/* تفاصيل المكوّنات عند الضغط */}
+                        {isHighlighted && val > 0 && (
+                          <div className="relative mt-1.5 space-y-0.5">
+                            {g.codes.map((c) => {
+                              const cv = ((row as Record<string, unknown>)[c] as number) ?? 0;
+                              if (!cv) return null;
+                              return (
+                                <div key={c} className="flex items-center justify-between gap-1">
+                                  <span className={`inline-flex items-center gap-0.5 text-[8px] font-extrabold px-1 py-0.5 rounded ${CODE_MAP[c].cell}`}>
+                                    <span className={`w-1 h-1 rounded-full ${CODE_MAP[c].chip}`} />
+                                    {CODE_MAP[c].short}
+                                  </span>
+                                  <span className={`text-[9px] font-black ${g.textColor}`}>{cv}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* صف الإجمالي */}
+        <div className="px-4 sm:px-6 py-4 bg-gradient-to-l from-[#F7F2E7] to-[#FAF7F0] border-t-2 border-gold/20">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="font-extrabold text-xs text-[#5C1523]">الإجمالي العام</span>
+            <span className="text-sm font-black text-[#2A1418]">{totalAll} يوم</span>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {ANALYSIS_GROUPS.map((g) => (
+              <div key={g.key} className={`rounded-xl p-2.5 ${g.lightBg} border ${g.border}`}>
+                <div className={`text-xl font-black ${g.textColor}`}>{totals[g.key]}</div>
+                <div className="text-[9px] font-extrabold text-stone-400 mt-0.5">
+                  {totalAll > 0 ? `${Math.round(totals[g.key] / totalAll * 100)}%` : "—"}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
