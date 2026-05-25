@@ -58,11 +58,11 @@ export default function ProfDevDetail({ params }: { params: { id: string } }) {
       setRecs((prev) => Array.from(new Set([...prev, ...newRecs])));
     }
     if (Array.isArray(data.supervisionTypes)) {
-      const valid = (data.supervisionTypes as string[]).filter((t) => SUPERVISION_TYPES.includes(t));
+      const valid = (data.supervisionTypes as string[]).filter((t) => (SUPERVISION_TYPES as readonly string[]).includes(t));
       if (valid.length > 0) setTypes((prev) => Array.from(new Set([...prev, ...valid])));
     }
     if (Array.isArray(data.supervisionMethods)) {
-      const valid = (data.supervisionMethods as string[]).filter((m) => SUPERVISION_METHODS.includes(m));
+      const valid = (data.supervisionMethods as string[]).filter((m) => (SUPERVISION_METHODS as readonly string[]).includes(m));
       if (valid.length > 0) setMethods((prev) => Array.from(new Set([...prev, ...valid])));
     }
     if (Array.isArray(data.attendance)) {
