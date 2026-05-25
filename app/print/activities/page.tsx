@@ -186,7 +186,7 @@ function PrintContent() {
             {section} — {department} | {ministry}
           </p>
           <p style={{ fontSize: 10, color: C.muted, margin: 0 }}>
-            طُبع من نظام التوجيه التربوي — {new Date().toLocaleDateString("ar-QA", { dateStyle: "long" })}
+            طُبع من نظام التوجيه التربوي — {new Date().toLocaleDateString("ar-QA-u-nu-latn", { dateStyle: "long" })}
           </p>
         </div>
       </div>

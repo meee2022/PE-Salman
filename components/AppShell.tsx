@@ -3,13 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   Home, Users, School, CalendarDays, BarChart3, ClipboardList,
   UserSearch, GraduationCap, Settings, Dumbbell, MoreHorizontal,
-  LogOut, X, ChevronDown, UserCircle, ShieldCheck, FileBarChart2, BookOpen
+  LogOut, X, ChevronDown, UserCircle, ShieldCheck, FileBarChart2, BookOpen,
+  Search, Bell,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { GlobalSearch } from "@/components/ui/GlobalSearch";
+import { useActiveYear } from "@/hooks/useActiveYear";
 
 interface NavItem { href: string; label: string; icon: LucideIcon }
 
@@ -61,10 +66,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { primary, secondary } = buildNav(user?.role, user?.supervisorId as string | undefined);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar primary={primary} secondary={secondary} />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <TopBar primary={primary} secondary={secondary} onSearch={() => setSearchOpen(true)} />
 
       <main className="flex-1 w-full">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 pb-28 lg:pb-8 space-y-5">
@@ -80,9 +87,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 /* ─────────────────────────── الشريط العلوي ─────────────────────────── */
-function TopBar({ primary, secondary }: { primary: NavItem[]; secondary: NavItem[] }) {
+function TopBar({ primary, secondary, onSearch }: { primary: NavItem[]; secondary: NavItem[]; onSearch: () => void }) {
   const isActive = useIsActive();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { token, user } = useAuth();
+  const YEAR = useActiveYear();
+  const alertCount = useQuery(
+    api.alerts.count,
+    token && user?.role !== "supervisor" ? { academicYear: YEAR, token } : "skip"
+  );
 
   return (
     <header className="no-print sticky top-0 z-40 safe-top bg-white/85 backdrop-blur-xl border-b border-black/[0.05]">
@@ -134,8 +147,34 @@ function TopBar({ primary, secondary }: { primary: NavItem[]; secondary: NavItem
           )}
         </nav>
 
-        {/* قائمة المستخدم */}
-        <div className="mr-auto lg:mr-0">
+        {/* أزرار البحث والتنبيهات */}
+        <div className="mr-auto lg:mr-0 flex items-center gap-1">
+          {/* زر البحث الشامل */}
+          <button
+            onClick={onSearch}
+            title="بحث شامل (Ctrl+K)"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-[#7A6A58] hover:bg-black/[0.04] hover:text-primary transition-colors"
+          >
+            <Search size={18} />
+            <span className="hidden sm:inline text-xs font-medium text-[#C0B3AA]">Ctrl K</span>
+          </button>
+
+          {/* جرس التنبيهات — للأدمن فقط */}
+          {user?.role !== "supervisor" && (
+            <Link
+              href="/dashboard/coverage"
+              title="التنبيهات النشطة"
+              className="relative flex items-center justify-center w-9 h-9 rounded-xl text-[#7A6A58] hover:bg-black/[0.04] hover:text-primary transition-colors"
+            >
+              <Bell size={18} />
+              {alertCount != null && alertCount > 0 && (
+                <span className="absolute -top-0.5 -left-0.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center font-sans">
+                  {alertCount > 9 ? "9+" : alertCount}
+                </span>
+              )}
+            </Link>
+          )}
+
           <ProfileMenu />
         </div>
       </div>

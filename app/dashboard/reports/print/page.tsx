@@ -33,11 +33,11 @@ const C = {
 };
 
 const CODE_GROUPS = [
-  { key: ["VS","CL"],      label: "زيارات ميدانية",  color: C.green },
+  { key: ["VS"],           label: "زيارات ميدانية",  color: C.green },
   { key: ["OF"],           label: "أعمال مكتبية",    color: C.primary },
   { key: ["TR","MT","OL"], label: "تطوير مهني",       color: C.blue },
   { key: ["AC","SP","VP"], label: "أنشطة متنوعة",    color: C.goldDk },
-  { key: ["LV","SL","WP"], label: "إجازات وأذونات",  color: C.orange },
+  { key: ["LV","SL","WP","CL"], label: "إجازات وأذونات", color: C.orange },
   { key: ["AB"],           label: "غياب",             color: "#EF4444" },
 ];
 
@@ -50,7 +50,7 @@ export default function PrintReportPage() {
   const summaries = useQuery(api.activity.summaries,   token ? { academicYear: YEAR, token } : "skip");
   const org       = useQuery(api.settings.org,         token ? { token } : "skip");
 
-  const today = new Date().toLocaleDateString("ar-EG", {
+  const today = new Date().toLocaleDateString("ar-EG-u-nu-latn", {
     year: "numeric", month: "long", day: "numeric",
   });
 
@@ -64,7 +64,7 @@ export default function PrintReportPage() {
       .sort((a, b) => b.coverageRate - a.coverageRate)
       .map((r) => {
         const act    = sumMap.get(r.supervisorId);
-        const visits = (act?.VS ?? 0) + (act?.CL ?? 0) + (act?.VP ?? 0);
+        const visits = (act?.VS ?? 0) + (act?.VP ?? 0);
         const office = act?.OF ?? 0;
         const develop = (act?.TR ?? 0) + (act?.MT ?? 0) + (act?.OL ?? 0);
         const total  = Object.values(act ?? {}).reduce((s: number, v) =>

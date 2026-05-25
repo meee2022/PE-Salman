@@ -75,7 +75,7 @@ export function printTable<T>(opts: {
         .join("")}</div>`
     : "";
 
-  const today = new Date().toLocaleDateString("ar-QA", { dateStyle: "long" });
+  const today = new Date().toLocaleDateString("ar-QA-u-nu-latn", { dateStyle: "long" });
 
   const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <title>${title}</title>
@@ -208,7 +208,7 @@ export function printOperationalPlan(opts: { year: string; rows: OpPlanRow[] }) 
       </div>`;
   }
 
-  const today = new Date().toLocaleDateString("ar-QA", { dateStyle: "long" });
+  const today = new Date().toLocaleDateString("ar-QA-u-nu-latn", { dateStyle: "long" });
   const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <title>الخطة الإجرائية ${year}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap">

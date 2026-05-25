@@ -18,7 +18,7 @@ export function PrintButton({ label = "تنزيل PDF" }: { label?: string }) {
 export function PrintHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { token } = useAuth();
   const org = useQuery(api.settings.org, token ? { token } : "skip");
-  const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  const today = new Date().toLocaleDateString("ar-EG-u-nu-latn", { year: "numeric", month: "long", day: "numeric" });
 
   return (
     <div className="print-only" style={{ marginBottom: 14 }}>

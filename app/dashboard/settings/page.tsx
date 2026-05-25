@@ -375,7 +375,7 @@ function AuditLog({ token }: { token: string }) {
               <div className="text-left shrink-0">
                 <p className="text-xs font-bold text-gold-dark">{l.userName ?? "—"}</p>
                 <p className="text-[10px] text-[#A89A92] font-bold mt-0.5" dir="ltr">
-                  {new Date(l.timestamp).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" })}
+                  {new Date(l.timestamp).toLocaleString("ar-EG-u-nu-latn", { dateStyle: "short", timeStyle: "short" })}
                 </p>
               </div>
             </div>

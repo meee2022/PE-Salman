@@ -10,12 +10,13 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 interface Props {
   title: string;
   value: string | number;
-  sub?: string;
+  sub?: React.ReactNode;
   icon?: React.ReactNode;
   svgIcon?: React.ReactNode;  // أيقونة SVG مخصصة تحل محل icon-orb
   color?: "primary" | "gold" | "green" | "blue";
   delay?: number;
   href?: string;
+  sparkline?: React.ReactNode; // مخطط تتبع صغير
 }
 
 const orbStyles: Record<NonNullable<Props["color"]>, string> = {
@@ -32,7 +33,7 @@ const accentBar: Record<NonNullable<Props["color"]>, string> = {
   blue:    "from-sky-400 to-sky-600",
 };
 
-export function KpiCard({ title, value, sub, icon, svgIcon, color = "primary", delay = 0, href }: Props) {
+export function KpiCard({ title, value, sub, icon, svgIcon, color = "primary", delay = 0, href, sparkline }: Props) {
   const inner = (
     <>
       {/* شريط لوني علوي فخم */}
@@ -42,7 +43,7 @@ export function KpiCard({ title, value, sub, icon, svgIcon, color = "primary", d
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-[#8A7A72] mb-2 tracking-wide">{title}</p>
           <p className="text-3xl font-extrabold text-[#2A1418] leading-none tracking-tight font-sans">{value}</p>
-          {sub && <p className="text-xs font-medium text-[#A89A92] mt-2.5 truncate">{sub}</p>}
+          {sub && <div className="text-xs font-medium text-[#A89A92] mt-2.5">{sub}</div>}
         </div>
         {svgIcon ? (
           <div className="shrink-0 transform group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300 drop-shadow-lg">
@@ -54,6 +55,12 @@ export function KpiCard({ title, value, sub, icon, svgIcon, color = "primary", d
           </div>
         ) : null}
       </div>
+
+      {sparkline && (
+        <div className="mt-3 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+          {sparkline}
+        </div>
+      )}
 
       {href && (
         <div className="flex items-center gap-1.5 text-[11px] font-bold text-primary opacity-70 group-hover:opacity-100 mt-4 transition-all">

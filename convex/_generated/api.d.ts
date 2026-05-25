@@ -11,6 +11,7 @@
 import type * as activity from "../activity.js";
 import type * as activityPlans from "../activityPlans.js";
 import type * as adminImport from "../adminImport.js";
+import type * as alerts from "../alerts.js";
 import type * as assignments from "../assignments.js";
 import type * as audit from "../audit.js";
 import type * as auth from "../auth.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   activity: typeof activity;
   activityPlans: typeof activityPlans;
   adminImport: typeof adminImport;
+  alerts: typeof alerts;
   assignments: typeof assignments;
   audit: typeof audit;
   auth: typeof auth;

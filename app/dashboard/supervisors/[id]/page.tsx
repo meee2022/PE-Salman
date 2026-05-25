@@ -15,17 +15,20 @@ import {
   Phone, Mail, IdCard, Briefcase, MapPin, ClipboardList, ChevronDown,
   AlertTriangle, CheckCircle2,
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
 import { useActiveYear } from "@/hooks/useActiveYear";
 
 const CODE_LABELS: Record<string, string> = {
-  VS: "زيارة صفية", CL: "زيارة عارضة", OF: "عمل مكتبي", MT: "اجتماع",
+  VS: "زيارة صفية", CL: "إجازة عارضة", OF: "عمل مكتبي", MT: "اجتماع",
   TR: "تطوير مهني", AC: "أنشطة", SP: "مهمة رسمية", VP: "مهمة عمل",
   OL: "تعلم عن بعد", WP: "إذن عمل", LV: "إجازة", SL: "إجازة مرضية", AB: "غياب",
 };
 
-const VISIT_CODES = ["VS", "CL"];
+const VISIT_CODES = ["VS"];
 const WORK_CODES  = ["OF", "MT", "TR", "AC", "SP", "VP", "OL"];
-const LEAVE_CODES = ["LV", "SL", "WP", "AB"];
+const LEAVE_CODES = ["LV", "SL", "WP", "AB", "CL"];
 
 const MONTH_AR: Record<string, string> = {
   "01": "يناير", "02": "فبراير", "03": "مارس", "04": "أبريل",
@@ -81,7 +84,7 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
 
   const codeVal = (c: string) => (activity ? ((activity as Record<string, unknown>)[c] as number) ?? 0 : 0);
   const formVal = (k: string) => (formTotals ? ((formTotals as Record<string, unknown>)[k] as number) ?? 0 : 0);
-  const totalVisits = codeVal("VS") + codeVal("CL");
+  const totalVisits = codeVal("VS");
   const initials = sup.name.split(" ").slice(0, 2).map((w) => w[0]).join("");
 
   const visitedSchools   = (schools as {_id:string}[]).filter((sc) => sc && schoolLastVisit[sc._id]);
@@ -117,7 +120,7 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
         <KpiCard 
           title="إجمالي الزيارات الميدانية" 
           value={totalVisits}
-          sub={`${codeVal("VS")} صفية · ${codeVal("CL")} عارضة`} 
+          sub={`${codeVal("VS")} زيارة صفية`}
           icon={<CalendarCheck size={20} />} 
           color="primary" 
           delay={0} 
@@ -262,13 +265,43 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
           <h2 className="section-title text-[#1C1008] font-black mb-4 border-b border-black/[0.04] pb-3">
             سجل النشاط الشهري التفصيلي
           </h2>
+
+          {/* مخطط بياني للنشاط الشهري */}
+          <div className="mb-5 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={monthlyActivity.map((row) => {
+                  const mo = row.month.slice(5, 7);
+                  return {
+                    name: MONTH_AR[mo]?.slice(0, 4) ?? mo,
+                    "زيارة صفية": (row["VS"] as number|undefined) ?? 0,
+                    "إجازة عارضة": (row["CL"] as number|undefined) ?? 0,
+                    "مكتبي": (row["OF"] as number|undefined) ?? 0,
+                  };
+                })}
+                margin={{ top: 4, right: 8, left: -18, bottom: 0 }}
+                barCategoryGap="28%"
+              >
+                <XAxis dataKey="name" tick={{ fontSize: 10, fontFamily: "'Cairo', sans-serif", fill: "#7A6A58" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(201,169,110,0.2)", borderRadius: 12, fontSize: 11, fontFamily: "'Cairo', sans-serif", boxShadow: "0 4px 16px -4px rgba(0,0,0,0.12)" }}
+                  cursor={{ fill: "rgba(0,0,0,0.03)" }}
+                />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontFamily: "'Cairo', sans-serif", paddingTop: 8 }} />
+                <Bar dataKey="زيارة صفية"  fill="#10b981" radius={[4,4,0,0]} maxBarSize={22} />
+                <Bar dataKey="إجازة عارضة" fill="#fb923c" radius={[4,4,0,0]} maxBarSize={22} />
+                <Bar dataKey="مكتبي"       fill="#7A1E30" radius={[4,4,0,0]} maxBarSize={22} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-xs font-sans" dir="rtl">
               <thead>
                 <tr className="bg-primary/5">
                   <th className="text-right px-3 py-2.5 font-extrabold text-[#2A1418] rounded-r-xl">الشهر</th>
                   <th className="text-center px-3 py-2.5 font-bold text-emerald-700">زيارة صفية</th>
-                  <th className="text-center px-3 py-2.5 font-bold text-teal-700">زيارة عارضة</th>
+                  <th className="text-center px-3 py-2.5 font-bold text-orange-600">إجازة عارضة</th>
                   <th className="text-center px-3 py-2.5 font-bold text-[#5C1523]">مكتبي</th>
                   <th className="text-center px-3 py-2.5 font-bold text-sky-700">اجتماع</th>
                   <th className="text-center px-3 py-2.5 font-bold text-violet-700">تطوير</th>
@@ -292,7 +325,7 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
                         {vs > 0 ? <span className="inline-block bg-emerald-100 text-emerald-700 font-extrabold px-2 py-0.5 rounded-lg">{vs}</span> : <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        {cl > 0 ? <span className="inline-block bg-teal-100 text-teal-700 font-extrabold px-2 py-0.5 rounded-lg">{cl}</span> : <span className="text-stone-300">—</span>}
+                        {cl > 0 ? <span className="inline-block bg-orange-100 text-orange-700 font-extrabold px-2 py-0.5 rounded-lg">{cl}</span> : <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2 text-center">
                         {of_ > 0 ? <span className="inline-block bg-primary/10 text-primary font-extrabold px-2 py-0.5 rounded-lg">{of_}</span> : <span className="text-stone-300">—</span>}

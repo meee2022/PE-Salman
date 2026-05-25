@@ -241,7 +241,7 @@ function AdminComplianceView() {
                     </td>
 
                     <td className="p-4 text-xs font-mono text-[#A89A92]">
-                      {item.updatedAt ? new Date(item.updatedAt).toLocaleString("ar-QA", { hour12: false }) : "—"}
+                      {item.updatedAt ? new Date(item.updatedAt).toLocaleString("ar-QA-u-nu-latn", { hour12: false }) : "—"}
                     </td>
                   </tr>
                 ))
@@ -389,7 +389,7 @@ function SupervisorComplianceView() {
                   تم التوقيع إلكترونياً على ميثاق السلوك المهني والنزاهة العمومية المعتمد بوزارة التربية والتعليم والتعليم العالي.
                 </p>
                 <p className="text-[11px] text-[#A89A92] font-mono mt-2">
-                  تاريخ التوقيع المسجل بالباكيند: {new Date(data.updatedAt).toLocaleString("ar-QA")}
+                  تاريخ التوقيع المسجل بالباكيند: {new Date(data.updatedAt).toLocaleString("ar-QA-u-nu-latn")}
                 </p>
               </div>
             </div>

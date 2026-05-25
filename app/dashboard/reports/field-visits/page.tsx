@@ -392,7 +392,7 @@ function KpiCard({
         <span className="text-[10px] font-bold leading-tight">{label}</span>
       </div>
       <div className={`text-2xl font-extrabold ${color}`}>
-        {value.toLocaleString("ar-QA")}
+        {value.toLocaleString("en-US")}
       </div>
       {sub && (
         <div className={`text-[10px] font-semibold opacity-70 ${color}`}>{sub}</div>

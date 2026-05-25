@@ -12,6 +12,7 @@ import {
   LayoutGrid, List, Upload, Phone, Mail, MessageCircle, AlertCircle, Info, FileSpreadsheet, Check, X, Printer
 } from "lucide-react";
 import { exportToCSV, printTable, type ExportColumn } from "@/lib/exportUtils";
+import { exportToExcel } from "@/lib/exportExcel";
 
 type TeacherForm = {
   id?: Id<"teachers">;
@@ -224,10 +225,13 @@ export default function TeachersPage() {
     return parts.length ? parts.join(" · ") : "جميع المعلمين والمنسقين";
   }
 
-  // تصدير CSV (يحترم الفلاتر الحالية)
+  // تصدير Excel (يحترم الفلاتر الحالية)
   function handleExport() {
     if (!teachers || teachers.length === 0) return;
-    exportToCSV("معلمو_التربية_البدنية", exportColumns.filter((c) => c.header !== "#"), teachers);
+    const xlsCols = exportColumns
+      .filter((c) => c.header !== "#")
+      .map((c) => ({ key: c.header, label: c.header, value: (t: Doc<"teachers">) => c.value(t) }));
+    exportToExcel(teachers, xlsCols, "معلمو_التربية_البدنية");
   }
 
   // طباعة / PDF (يحترم الفلاتر الحالية)

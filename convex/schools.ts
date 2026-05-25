@@ -99,6 +99,61 @@ export const upsert = mutation({
   },
 });
 
+// ── خريطة تغطية الزيارات: كل مدرسة + آخر زيارة مسجّلة ─────────────
+export const listWithVisits = query({
+  args: { academicYear: v.string(), token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, args.token);
+    if (!canSeeAll(user)) return [];
+
+    const schools = (await ctx.db.query("schools").collect()).filter((s) => s.isActive);
+
+    // تعيينات الموجهين للعام
+    const assignments = await ctx.db
+      .query("assignments")
+      .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
+      .collect();
+    const assignMap = new Map(assignments.map((a) => [a.schoolId as string, a.supervisorId]));
+
+    // فهرس الموجهين
+    const supIds = [...new Set(assignments.map((a) => a.supervisorId))];
+    const supers = await Promise.all(supIds.map((id) => ctx.db.get(id)));
+    const supMap = new Map(supers.filter(Boolean).map((s) => [s!._id as string, s!]));
+
+    // جلب سجلات الزيارات (VS/CL) للعام الدراسي بالمدى الزمني
+    const [startYear, endYear] = args.academicYear.split("-");
+    const startDate = `${startYear}-09-01`;
+    const endDate   = `${endYear}-07-31`;
+
+    const visitLogs = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_date", (q) => q.gte("date", startDate).lte("date", endDate))
+      .collect();
+
+    const schoolLastVisit = new Map<string, string>();
+    for (const log of visitLogs) {
+      if (log.schoolId && log.code === "VS") {
+        const k = log.schoolId as string;
+        if (!schoolLastVisit.has(k) || log.date > schoolLastVisit.get(k)!) {
+          schoolLastVisit.set(k, log.date);
+        }
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    return schools.map((school) => {
+      const lastVisit = schoolLastVisit.get(school._id as string) ?? null;
+      const daysSince = lastVisit
+        ? Math.floor((new Date(today).getTime() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+      const supervisorId = assignMap.get(school._id as string);
+      const supervisor   = supervisorId ? (supMap.get(supervisorId as string) ?? null) : null;
+      return { ...school, supervisor, lastVisitDate: lastVisit, daysSinceVisit: daysSince };
+    });
+  },
+});
+
 // ── خيارات المدارس (أسماء فقط) لأي مستخدم مسجّل — للقوائم المنسدلة ──
 export const options = query({
   args: { token: v.optional(v.string()) },

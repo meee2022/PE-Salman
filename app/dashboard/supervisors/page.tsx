@@ -8,8 +8,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, TxtField, SelectField, useToast } from "@/components/ui/Modal";
-import { Users, Phone, Mail, Search, ChevronLeft, Plus, Pencil, Trash2, Power, AlertTriangle, RotateCcw } from "lucide-react";
+import { Users, Phone, Mail, Search, ChevronLeft, Plus, Pencil, Trash2, Power, AlertTriangle, RotateCcw, Download } from "lucide-react";
 import { useActiveYear } from "@/hooks/useActiveYear";
+import { exportToExcel } from "@/lib/exportExcel";
 
 type SupForm = {
   id?: Id<"supervisors">;
@@ -126,20 +127,59 @@ export default function SupervisorsPage() {
         title="الموجهون"
         subtitle={`${supervisors.length} موجه مسجل في النظام`}
         icon={<Users size={26} />}
-        action={isAdmin && (
+        action={
           <div className="flex items-center gap-2">
             <button
-              onClick={runDeduplicate}
-              disabled={deduping}
-              className="btn-ghost text-xs !py-2 !px-3 text-amber-700 border-amber-300/40 hover:bg-amber-50 disabled:opacity-60"
+              onClick={() => exportToExcel(
+                supervisors.map((s) => {
+                  const cov = coverage?.find((c) => c.supervisorId === s._id);
+                  return {
+                    name: s.name, jobTitle: s.jobTitle ?? "",
+                    gender: s.gender === "male" ? "ذكر" : "أنثى",
+                    jobNumber: s.jobNumber ?? "",
+                    officePhone: s.officePhone ?? "", mobile: s.mobile ?? "", email: s.email ?? "",
+                    coverageRate: cov ? `${Math.round(cov.coverageRate)}%` : "—",
+                    formsCount: cov?.formsCount ?? 0,
+                    schoolsCovered: cov?.schoolsCovered ?? 0,
+                    schoolsRequired: cov?.schoolsRequired ?? 0,
+                  };
+                }),
+                [
+                  { key: "name", label: "اسم الموجه" },
+                  { key: "jobTitle", label: "المسمى الوظيفي" },
+                  { key: "gender", label: "الجنس" },
+                  { key: "jobNumber", label: "الرقم الوظيفي" },
+                  { key: "officePhone", label: "هاتف المكتب" },
+                  { key: "mobile", label: "الجوال" },
+                  { key: "email", label: "البريد الإلكتروني" },
+                  { key: "schoolsRequired", label: "المدارس المطلوبة" },
+                  { key: "schoolsCovered", label: "المدارس المغطاة" },
+                  { key: "coverageRate", label: "نسبة التغطية" },
+                  { key: "formsCount", label: "عدد الاستمارات" },
+                ],
+                `الموجهون_${YEAR}`
+              )}
+              className="btn-ghost text-xs !py-2 !px-3"
+              title="تصدير Excel"
             >
-              {deduping ? "جاري الدمج…" : "دمج المكررين"}
+              <Download size={14} /> Excel
             </button>
-            <button onClick={() => setForm({ ...empty })} className="btn-primary">
-              <Plus size={16} /> إضافة موجه جديد
-            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={runDeduplicate}
+                  disabled={deduping}
+                  className="btn-ghost text-xs !py-2 !px-3 text-amber-700 border-amber-300/40 hover:bg-amber-50 disabled:opacity-60"
+                >
+                  {deduping ? "جاري الدمج…" : "دمج المكررين"}
+                </button>
+                <button onClick={() => setForm({ ...empty })} className="btn-primary">
+                  <Plus size={16} /> إضافة موجه جديد
+                </button>
+              </>
+            )}
           </div>
-        )}
+        }
       />
 
       {/* ── بانر السجلات اليتيمة ── */}

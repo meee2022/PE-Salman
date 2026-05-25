@@ -9,7 +9,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, NumField, useToast } from "@/components/ui/Modal";
 import { PrintButton, PrintHeader, PrintSignature } from "@/components/ui/PrintReport";
-import { BarChart3, Pencil, SlidersHorizontal } from "lucide-react";
+import { BarChart3, Pencil, SlidersHorizontal, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 import { useActiveYear } from "@/hooks/useActiveYear";
 
 export default function CoveragePage() {
@@ -54,9 +55,9 @@ export default function CoveragePage() {
 
   const maxCoverage = Math.max(...sorted.map((r) => r.schoolsRequired), 1);
   const actSorted = [...summaries].sort((a, b) =>
-    ((b.VS ?? 0) + (b.CL ?? 0)) - ((a.VS ?? 0) + (a.CL ?? 0))
+    (b.VS ?? 0) - (a.VS ?? 0)
   );
-  const maxAct = Math.max(...actSorted.map((r) => (r.VS ?? 0) + (r.CL ?? 0) + (r.OF ?? 0) + (r.TR ?? 0) + (r.MT ?? 0)), 1);
+  const maxAct = Math.max(...actSorted.map((r) => (r.VS ?? 0) + (r.OF ?? 0) + (r.TR ?? 0) + (r.MT ?? 0)), 1);
 
   return (
     <div className="space-y-6 animate-in">
@@ -65,15 +66,39 @@ export default function CoveragePage() {
         subtitle={`تحليل إحصائي تفصيلي لأداء الموجهين — العام الدراسي ${YEAR}`} 
         icon={<BarChart3 size={26} />}
         action={
-          <div className="flex gap-2">
-            <PrintButton label="تصدير تقرير المؤشرات (PDF)" />
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => exportToExcel(
+                sorted.map((r) => ({
+                  supervisor: r.supervisor?.name ?? "—",
+                  required: r.schoolsRequired,
+                  covered: r.schoolsCovered,
+                  forms: r.formsCount,
+                  coverageRate: `${Math.round(r.coverageRate)}%`,
+                  status: r.status ?? "—",
+                })),
+                [
+                  { key: "supervisor",   label: "الموجه" },
+                  { key: "required",     label: "المطلوب" },
+                  { key: "covered",      label: "المغطّى" },
+                  { key: "forms",        label: "الاستمارات" },
+                  { key: "coverageRate", label: "نسبة التغطية" },
+                  { key: "status",       label: "الحالة" },
+                ],
+                `التغطية_${YEAR}`
+              )}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-sm transition-all"
+            >
+              <Download size={14} /> تصدير Excel
+            </button>
+            <PrintButton label="تصدير PDF" />
             {isAdmin && (
               <button onClick={() => setShowAll(true)} className="btn-primary">
                 <SlidersHorizontal size={16} /> تعديل المطلوب للجميع
               </button>
             )}
           </div>
-        } 
+        }
       />
 
       <PrintHeader title="تقرير التغطية والمؤشرات" subtitle={`العام الدراسي ${YEAR}`} />
@@ -145,7 +170,7 @@ export default function CoveragePage() {
             </div>
             <div className="space-y-3.5 max-h-[340px] overflow-y-auto pl-1">
               {actSorted.map((r) => {
-                const visits  = (r.VS ?? 0) + (r.CL ?? 0);
+                const visits  = r.VS ?? 0;
                 const office  = r.OF ?? 0;
                 const develop = (r.TR ?? 0) + (r.MT ?? 0);
                 const total   = visits + office + develop;

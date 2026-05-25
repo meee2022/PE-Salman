@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { getAuthUser, canSeeAll, requireAdminMutation } from "./permissions";
 import type { MutationCtx } from "./_generated/server";
 
-const LEAVE_CODES = new Set(["LV", "SL", "AB", "WP", "HC", "CA"]);
+const LEAVE_CODES = new Set(["LV", "SL", "AB", "WP", "HC", "CA", "CL"]);
 
 // ─── إعادة حساب الملخص السنوي لموجه واحد من سجلات اليومية ───────
 async function recomputeForSupervisor(
@@ -310,6 +310,47 @@ export const recomputeAllSummaries = mutation({
       await recomputeForSupervisor(ctx, supId, args.academicYear);
     }
     return supIds.length;
+  },
+});
+
+// ── إجماليات شهرية للنشاط (للـ sparklines في الداشبورد) ──────────
+export const monthlyTotals = query({
+  args: { academicYear: v.string(), token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, args.token);
+    if (!user || !canSeeAll(user)) return [];
+
+    const [sy, ey] = args.academicYear.split("-").map(Number);
+    const start = `${sy}-09-01`;
+    const end   = `${ey}-07-31`;
+
+    const logs = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_date", (q) => q.gte("date", start).lte("date", end))
+      .collect();
+
+    const map = new Map<string, { visits: number; office: number; develop: number }>();
+    for (const l of logs) {
+      const month = l.date.slice(0, 7);
+      const cur = map.get(month) ?? { visits: 0, office: 0, develop: 0 };
+      if (["VS", "VP"].includes(l.code)) cur.visits++;
+      else if (l.code === "OF") cur.office++;
+      else if (["TR", "MT"].includes(l.code)) cur.develop++;
+      map.set(month, cur);
+    }
+
+    // جميع أشهر السنة الدراسية سبتمبر ← يونيو
+    const months: string[] = [];
+    for (let y = sy, m = 9; ; ) {
+      months.push(`${y}-${String(m).padStart(2, "0")}`);
+      if (y === ey && m === 6) break;
+      m++; if (m > 12) { m = 1; y++; }
+    }
+
+    return months.map((month) => ({
+      month,
+      ...(map.get(month) ?? { visits: 0, office: 0, develop: 0 }),
+    }));
   },
 });
 

@@ -10,7 +10,7 @@
  * ⑤ Rankings Table — جدول ترتيب كامل مع شرائط تقدم
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
@@ -20,10 +20,14 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/ui/Motion";
 import { motion } from "framer-motion";
 import {
   Trophy, Medal, Users, School, ClipboardCheck,
-  TrendingUp, Star, Award, Eye, ChevronLeft,
+  TrendingUp, Star, Award, Eye, ChevronLeft, Download,
 } from "lucide-react";
 import Link from "next/link";
 import { useActiveYear } from "@/hooks/useActiveYear";
+import { exportToExcel } from "@/lib/exportExcel";
+import {
+  PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
+} from "recharts";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -54,7 +58,7 @@ export default function ReportsPage() {
 
     // إجمالي الزيارات من ملخصات النشاط
     const totalVisits = summaries.reduce(
-      (s, r) => s + (r.VS ?? 0) + (r.CL ?? 0) + (r.VP ?? 0),
+      (s, r) => s + (r.VS ?? 0) + (r.VP ?? 0),
       0
     );
 
@@ -70,7 +74,7 @@ export default function ReportsPage() {
 
     const merged = ranked.map((r) => {
       const act = sumMap.get(r.supervisorId);
-      const visits = (act?.VS ?? 0) + (act?.CL ?? 0) + (act?.VP ?? 0);
+      const visits = (act?.VS ?? 0) + (act?.VP ?? 0);
       const office = act?.OF ?? 0;
       const develop = (act?.TR ?? 0) + (act?.MT ?? 0);
       return { ...r, visits, office, develop };
@@ -122,11 +126,43 @@ export default function ReportsPage() {
   /* ════════════════════════════════════════════════════════════ */
   return (
     <div className="space-y-7">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <PageHeader
           title="التقارير والإحصائيات"
           subtitle={`تحليل شامل لأداء الموجهين — العام الدراسي ${YEAR}`}
           icon={<TrendingUp size={26} />}
+          action={stats ? (
+            <button
+              onClick={() => exportToExcel(
+                stats.ranked.map((r) => ({
+                  name: r.supervisor?.name ?? "—",
+                  required: r.schoolsRequired,
+                  covered: r.schoolsCovered,
+                  forms: r.formsCount,
+                  coverageRate: `${Math.round(r.coverageRate)}%`,
+                  visits: r.visits,
+                  office: r.office,
+                  develop: r.develop,
+                  status: r.status ?? "—",
+                })),
+                [
+                  { key: "name",         label: "الموجه" },
+                  { key: "required",     label: "المدارس المطلوبة" },
+                  { key: "covered",      label: "المدارس المغطاة" },
+                  { key: "forms",        label: "الاستمارات" },
+                  { key: "coverageRate", label: "نسبة التغطية" },
+                  { key: "visits",       label: "الزيارات" },
+                  { key: "office",       label: "أيام مكتبية" },
+                  { key: "develop",      label: "تطوير مهني" },
+                  { key: "status",       label: "الحالة" },
+                ],
+                `التقارير_${YEAR}`
+              )}
+              className="btn-ghost text-xs !py-2 !px-3 no-print"
+            >
+              <Download size={14} /> Excel
+            </button>
+          ) : undefined}
         />
         <Link
           href="/dashboard/reports/print"
@@ -743,80 +779,192 @@ function ActivityBar({ name, visits, office, develop }: {
   );
 }
 
-/* ── Donut SVG بسيط ─────────────────────────────────────────────── */
-function DonutSlice({ total, value, color, offset, r = 30 }: {
-  total: number; value: number; color: string; offset: number; r?: number;
-}) {
-  const circ = 2 * Math.PI * r;
-  const pct  = total > 0 ? (value / total) * circ : 0;
-  return (
-    <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="12"
-      strokeDasharray={`${pct} ${circ}`}
-      strokeDashoffset={-offset}
-      strokeLinecap="butt"
-      style={{ transition: "stroke-dasharray 1.2s cubic-bezier(.16,1,.3,1)" }}
-    />
-  );
-}
-
 const CODE_GROUPS = [
-  { key: ["VS","CL"],        label: "زيارات",   color: "#10b981" },
-  { key: ["OF"],             label: "مكتبي",    color: "#5C1523" },
-  { key: ["TR","MT","OL"],   label: "تطوير",    color: "#38bdf8" },
-  { key: ["AC","SP","VP"],   label: "أنشطة",    color: "#f59e0b" },
-  { key: ["LV","SL","WP"],   label: "إجازات",   color: "#fb923c" },
-  { key: ["AB"],             label: "غياب",     color: "#ef4444" },
+  { key: ["VS"],                label: "زيارات ميدانية", color: "#10b981", bg: "bg-emerald-50",  text: "text-emerald-700",  border: "border-emerald-200/60" },
+  { key: ["OF"],                label: "عمل مكتبي",      color: "#7A1E30", bg: "bg-rose-50",     text: "text-rose-800",     border: "border-rose-200/60"    },
+  { key: ["TR","MT","OL"],      label: "تطوير مهني",     color: "#0ea5e9", bg: "bg-sky-50",      text: "text-sky-700",      border: "border-sky-200/60"     },
+  { key: ["AC","SP","VP"],      label: "أنشطة ومهام",    color: "#f59e0b", bg: "bg-amber-50",    text: "text-amber-700",    border: "border-amber-200/60"   },
+  { key: ["LV","SL","WP","CL"], label: "إجازات وأذونات", color: "#fb923c", bg: "bg-orange-50",   text: "text-orange-700",   border: "border-orange-200/60"  },
+  { key: ["AB"],                label: "غياب",            color: "#ef4444", bg: "bg-red-50",      text: "text-red-700",      border: "border-red-200/60"     },
 ];
 
+const TTP_STYLE = {
+  background: "rgba(255,255,255,0.97)",
+  border: "1px solid rgba(201,169,110,0.18)",
+  borderRadius: 14,
+  fontSize: 12,
+  fontFamily: "'Cairo', sans-serif",
+  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.12)",
+  direction: "rtl" as const,
+};
+
 function ActivityDonutGrid({ summaries }: { summaries: any[] }) {
-  // احسب مجموع كل مجموعة
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
   const totals = CODE_GROUPS.map(g => ({
     ...g,
     count: summaries.reduce((s, r) => s + g.key.reduce((ss, k) => ss + (r[k] ?? 0), 0), 0),
   }));
   const grand = totals.reduce((s, g) => s + g.count, 0);
 
-  // احسب offsets للـ donut
-  const r = 30, circ = 2 * Math.PI * r;
-  let cumOffset = 0;
-  const slices = totals.map(g => {
-    const offset = cumOffset;
-    cumOffset += grand > 0 ? (g.count / grand) * circ : 0;
-    return { ...g, offset };
-  });
+  const pieData = totals.map(g => ({
+    name: g.label,
+    value: g.count,
+    color: g.color,
+  }));
+
+  // بيانات الأشرطة المكدّسة لكل موجه
+  const supRows = summaries
+    .filter((s: any) => s.supervisor?.name)
+    .map((s: any) => {
+      const get = (keys: string[]) => keys.reduce((t, k) => t + ((s as Record<string,number>)[k] ?? 0), 0);
+      const total = CODE_GROUPS.reduce((t, g) => t + get(g.key), 0);
+      const row: Record<string, unknown> = {
+        name: (s.supervisor.name as string).split(" ").slice(0, 2).join(" "),
+        fullName: s.supervisor.name as string,
+        total,
+      };
+      CODE_GROUPS.forEach(g => { row[g.label] = get(g.key); });
+      return row;
+    })
+    .filter((s: any) => s.total > 0)
+    .sort((a: any, b: any) => (b.total as number) - (a.total as number));
 
   return (
-    <div className="flex flex-col lg:flex-row items-center gap-8">
-      {/* الدائرة */}
-      <div className="relative shrink-0" style={{ width: 144, height: 144 }}>
-        <svg width="144" height="144" className="-rotate-90">
-          <circle cx="36" cy="36" r="30" fill="none" stroke="#f3f0ec" strokeWidth="12"
-            transform="scale(2) translate(36,36) scale(-1)" />
-          {slices.map((s, i) => (
-            <DonutSlice key={i} total={grand} value={s.count} color={s.color} offset={s.offset} />
-          ))}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-black text-[#2A1418] font-sans">{grand}</span>
-          <span className="text-[10px] font-bold text-[#A89A92]">يوم إجمالي</span>
+    <div className="space-y-8">
+
+      {/* ── قسم 1: دائرة + بطاقات ── */}
+      <div className="flex flex-col lg:flex-row items-start gap-6">
+        {/* Pie Chart */}
+        <div className="relative shrink-0 w-full lg:w-60">
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%" cy="50%"
+                innerRadius={62} outerRadius={90}
+                paddingAngle={2}
+                dataKey="value"
+                strokeWidth={0}
+                onMouseEnter={(_: unknown, i: number) => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
+              >
+                {pieData.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.color}
+                    opacity={activeIdx === null || activeIdx === i ? 1 : 0.35}
+                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+                  />
+                ))}
+              </Pie>
+              <RTooltip
+                contentStyle={TTP_STYLE}
+                formatter={(v: number, name: string) => [
+                  `${v} يوم — ${grand > 0 ? Math.round(v / grand * 100) : 0}%`,
+                  name,
+                ]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center">
+              <p className="text-[26px] font-black text-[#2A1418] font-sans leading-none">{grand.toLocaleString("en-US")}</p>
+              <p className="text-[11px] font-bold text-[#A89A92] mt-1">إجمالي الأيام</p>
+            </div>
+          </div>
+        </div>
+
+        {/* بطاقات الفئات */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1 w-full self-center">
+          {totals.map((g, i) => {
+            const pct = grand > 0 ? Math.round((g.count / grand) * 100) : 0;
+            return (
+              <div
+                key={g.label}
+                onMouseEnter={() => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
+                className={`relative overflow-hidden rounded-2xl p-4 border transition-all duration-200 cursor-default
+                  ${g.bg} ${g.border}
+                  ${activeIdx === i ? "shadow-md scale-[1.02]" : "shadow-sm hover:shadow-md"}`}
+              >
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: g.color }} />
+                <div className="flex items-start justify-between gap-1">
+                  <p className={`text-[11px] font-bold leading-tight ${g.text}`}>{g.label}</p>
+                  <span className="text-[11px] font-black shrink-0" style={{ color: g.color }}>{pct}%</span>
+                </div>
+                <p className="text-[26px] font-black text-[#2A1418] font-sans leading-none mt-2">{g.count}</p>
+                <div className="mt-3 h-1.5 bg-white/60 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${pct}%`, background: g.color }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* مفتاح + أرقام */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1 w-full">
-        {slices.map(g => (
-          <div key={g.label} className="flex items-center gap-3 p-3 rounded-2xl bg-black/[0.02] border border-black/[0.04] hover:bg-black/[0.04] transition-colors">
-            <div className="w-3 h-10 rounded-full shrink-0" style={{ background: g.color }} />
-            <div>
-              <p className="text-xl font-black text-[#2A1418] font-sans leading-none">{g.count}</p>
-              <p className="text-xs font-bold text-[#8A7A72] mt-1">{g.label}</p>
-              <p className="text-[10px] text-[#C0B4AE] font-semibold">
-                {grand > 0 ? Math.round((g.count / grand) * 100) : 0}%
-              </p>
-            </div>
+      {/* ── قسم 2: شريط مكدّس أفقي لكل موجه ── */}
+      {supRows.length > 0 && (
+        <div className="space-y-4 border-t border-black/[0.05] pt-6">
+          {/* رأس القسم */}
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-gold" />
+            <p className="text-sm font-extrabold text-[#1C1008]">توزيع أيام كل موجه على حدة</p>
+            <span className="text-[10px] font-bold text-[#A89A92] bg-black/[0.04] px-2 py-0.5 rounded-full">{supRows.length} موجه</span>
           </div>
-        ))}
-      </div>
+
+          {/* مفتاح الألوان */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 pb-1">
+            {CODE_GROUPS.map(g => (
+              <div key={g.label} className="flex items-center gap-1.5">
+                <div className="w-3 h-2.5 rounded-sm shrink-0" style={{ background: g.color }} />
+                <span className="text-[10px] font-bold text-[#7A6A58]">{g.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* الأشرطة */}
+          <div className="space-y-2.5">
+            {(supRows as any[]).map((row, i) => {
+              const total = (row.total as number) || 0;
+              return (
+                <div key={i} className="flex items-center gap-3 group">
+                  {/* الاسم — عرض ثابت RTL */}
+                  <p
+                    className="text-[11px] font-extrabold text-[#1C1008] text-right shrink-0 leading-tight"
+                    style={{ width: 148, direction: "rtl" }}
+                    title={row.fullName as string}
+                  >
+                    {(row.fullName as string).split(" ").slice(0, 3).join(" ")}
+                  </p>
+                  {/* الشريط المكدّس */}
+                  <div className="flex-1 flex h-6 rounded-lg overflow-hidden bg-black/[0.04]">
+                    {CODE_GROUPS.map(g => {
+                      const val = (row[g.label] as number) ?? 0;
+                      const pct = total > 0 ? (val / total) * 100 : 0;
+                      return pct >= 1 ? (
+                        <div
+                          key={g.label}
+                          style={{ width: `${pct}%`, background: g.color }}
+                          title={`${g.label}: ${val} يوم`}
+                          className="transition-opacity duration-200 group-hover:opacity-90 first:rounded-r-lg last:rounded-l-lg"
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                  {/* الإجمالي */}
+                  <span className="shrink-0 text-[11px] font-extrabold text-[#2A1418] font-sans w-7 text-left">
+                    {total}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

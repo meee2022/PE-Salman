@@ -26,7 +26,7 @@ const CODES: {
   cell: string; chip: string; hdr: string;
 }[] = [
   { code: "VS", short: "زيارة",   label: "زيارة صفية",      cell: "bg-emerald-500/10 text-emerald-700 border border-emerald-300/35",  chip: "bg-emerald-500",  hdr: "#10b981" },
-  { code: "CL", short: "عارضة",   label: "زيارة عارضة",     cell: "bg-emerald-500/5 text-emerald-600 border border-emerald-200/30",   chip: "bg-emerald-400",  hdr: "#34d399" },
+  { code: "CL", short: "عارضة",   label: "إجازة عارضة",     cell: "bg-orange-400/15 text-orange-700 border border-orange-300/40",    chip: "bg-orange-400",   hdr: "#fb923c" },
   { code: "OF", short: "مكتبي",   label: "عمل مكتبي",       cell: "bg-[#5C1523]/5 text-[#5C1523] border border-[#5C1523]/20",        chip: "bg-[#5C1523]",    hdr: "#C9A96E" },
   { code: "MT", short: "اجتماع",  label: "اجتماع فني",      cell: "bg-[#7A1E30]/5 text-[#7A1E30] border border-[#7A1E30]/20",        chip: "bg-[#7A1E30]",    hdr: "#E8DECF" },
   { code: "TR", short: "تطوير",   label: "تطوير مهني",      cell: "bg-sky-500/10 text-sky-700 border border-sky-300/35",             chip: "bg-sky-500",      hdr: "#0ea5e9" },
@@ -572,7 +572,6 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                           >
                             {meta ? (
                               <>
-                                <span className={`w-1.5 h-1.5 rounded-full mb-0.5 ${meta.chip}`} />
                                 <span className="leading-tight font-black">{meta.short}</span>
                                 {hasNote && mode === "week" && (
                                   <span className="text-[8px] leading-tight opacity-75 max-w-[70px] text-center break-words line-clamp-2 mt-0.5 font-semibold px-0.5">
@@ -832,7 +831,7 @@ const ANALYSIS_GROUPS = [
   {
     key: "visits",
     label: "الزيارات الميدانية",
-    codes: ["VS", "CL"] as Code[],
+    codes: ["VS"] as Code[],
     color: "#10b981",
     bg: "bg-emerald-500",
     lightBg: "bg-emerald-50",
@@ -872,7 +871,7 @@ const ANALYSIS_GROUPS = [
   {
     key: "leave",
     label: "الإجازات والأذونات",
-    codes: ["LV", "SL", "HC", "CA", "WP"] as Code[],
+    codes: ["LV", "SL", "HC", "CA", "WP", "CL"] as Code[],
     color: "#f97316",
     bg: "bg-orange-500",
     lightBg: "bg-orange-50",

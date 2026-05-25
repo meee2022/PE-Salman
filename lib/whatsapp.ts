@@ -34,7 +34,7 @@ export function sendOrCopy(phone: string | undefined | null, message: string): v
 /** تنسيق التاريخ بالعربية */
 function fmtDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString("ar-QA", {
+    return new Date(iso).toLocaleDateString("ar-QA-u-nu-latn", {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
   } catch {

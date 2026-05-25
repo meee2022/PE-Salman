@@ -128,10 +128,10 @@ export const detail = query({
         q.eq("supervisorId", args.id).eq("academicYear", args.academicYear))
       .collect();
 
-    // آخر زيارة لكل مدرسة (schoolId → آخر تاريخ VS/CL)
+    // آخر زيارة لكل مدرسة (schoolId → آخر تاريخ VS فقط — CL إجازة عارضة)
     const schoolLastVisit: Record<string, string> = {};
     for (const log of activityLogsList) {
-      if (log.schoolId && (log.code === "VS" || log.code === "CL")) {
+      if (log.schoolId && log.code === "VS") {
         const k = log.schoolId as string;
         if (!schoolLastVisit[k] || log.date > schoolLastVisit[k]) {
           schoolLastVisit[k] = log.date;

@@ -8,7 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, TxtField, NumField, SelectField } from "@/components/ui/Modal";
-import { Search, ArrowLeftRight, School, Check, X, Plus, Pencil, Trash2, Users, Phone, Mail, Printer, Download } from "lucide-react";
+import { Search, ArrowLeftRight, School, Check, X, Plus, Pencil, Trash2, Users, Phone, Mail, Printer, Download, MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useActiveYear } from "@/hooks/useActiveYear";
 import { exportToCSV, printTable, type ExportColumn } from "@/lib/exportUtils";
 
@@ -24,7 +24,9 @@ export default function SchoolsPage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
   const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
-  const schools      = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip") as SchoolWithSup[] | undefined;
+  const [viewMode, setViewMode] = useState<"list" | "visits">("list");
+  const schools          = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip") as SchoolWithSup[] | undefined;
+  const schoolsWithVisits = useQuery(api.schools.listWithVisits, viewMode === "visits" && token ? { academicYear: YEAR, token } : "skip");
   const supervisors  = useQuery(api.supervisors.list, token ? { token } : "skip");
   const bulkReassign = useMutation(api.assignments.bulkReassign);
   const createSchool = useMutation(api.schools.create);
@@ -187,6 +189,135 @@ export default function SchoolsPage() {
           </div>
         }
       />
+
+      {/* ── تبديل العرض: قائمة / خريطة الزيارات ── */}
+      <div className="flex gap-1 bg-black/[0.04] rounded-2xl p-1 w-fit border border-black/[0.04]">
+        <button
+          onClick={() => setViewMode("list")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === "list" ? "bg-white text-primary shadow-sm" : "text-[#8A7A72] hover:text-[#2A1418]"}`}
+        >
+          <School size={15} /> قائمة المدارس
+        </button>
+        <button
+          onClick={() => setViewMode("visits")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === "visits" ? "bg-white text-primary shadow-sm" : "text-[#8A7A72] hover:text-[#2A1418]"}`}
+        >
+          <MapPin size={15} /> خريطة الزيارات
+        </button>
+      </div>
+
+      {/* ── خريطة الزيارات ── */}
+      {viewMode === "visits" && (
+        <div className="space-y-4 animate-in">
+          {schoolsWithVisits === undefined ? (
+            <div className="flex justify-center py-12">
+              <div className="w-10 h-10 rounded-full border-[3px] border-gold/10 border-t-gold animate-spin" />
+            </div>
+          ) : (() => {
+            const visited   = schoolsWithVisits.filter((s) => s.lastVisitDate);
+            const unvisited = schoolsWithVisits.filter((s) => !s.lastVisitDate);
+            const fresh     = visited.filter((s) => (s.daysSinceVisit ?? 999) <= 14);
+            const aging     = visited.filter((s) => (s.daysSinceVisit ?? 0) > 14 && (s.daysSinceVisit ?? 0) <= 30);
+            const old       = visited.filter((s) => (s.daysSinceVisit ?? 0) > 30);
+            return (
+              <>
+                {/* إحصائيات سريعة */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: "زيارة حديثة (≤14 يوم)", count: fresh.length,     color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                    { label: "تحتاج متابعة (15-30)", count: aging.length,     color: "bg-amber-50 border-amber-200 text-amber-700" },
+                    { label: "لم تُزَر منذ فترة (>30)", count: old.length,    color: "bg-orange-50 border-orange-200 text-orange-700" },
+                    { label: "لم تُسجَّل أي زيارة",   count: unvisited.length, color: "bg-red-50 border-red-200 text-red-700" },
+                  ].map((s) => (
+                    <div key={s.label} className={`card-luxurious p-4 border ${s.color} text-center space-y-1`}>
+                      <p className="text-2xl font-black font-sans">{s.count}</p>
+                      <p className="text-[11px] font-bold">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* جدول المدارس */}
+                <div className="glass-table-container">
+                  <div className="overflow-x-auto">
+                    <table className="glass-table">
+                      <thead>
+                        <tr>
+                          <th className="text-right">اسم المدرسة</th>
+                          <th className="text-center">الموجه المسؤول</th>
+                          <th className="text-center">فئة الطلاب</th>
+                          <th className="text-center">آخر زيارة مسجّلة</th>
+                          <th className="text-center">الأيام منذ الزيارة</th>
+                          <th className="text-center">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...schoolsWithVisits]
+                          .sort((a, b) => {
+                            // ترتيب: غير مزارة أولاً، ثم الأقدم زيارةً
+                            if (!a.lastVisitDate && !b.lastVisitDate) return a.name.localeCompare(b.name, "ar");
+                            if (!a.lastVisitDate) return -1;
+                            if (!b.lastVisitDate) return 1;
+                            return (b.daysSinceVisit ?? 0) - (a.daysSinceVisit ?? 0);
+                          })
+                          .map((sc) => {
+                            const days = sc.daysSinceVisit;
+                            const statusColor = !sc.lastVisitDate
+                              ? "bg-red-50 text-red-700 border-red-200/60"
+                              : days! <= 14
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                              : days! <= 30
+                              ? "bg-amber-50 text-amber-700 border-amber-200/60"
+                              : "bg-orange-50 text-orange-700 border-orange-200/60";
+                            const statusLabel = !sc.lastVisitDate
+                              ? "لم تُسجَّل"
+                              : days! <= 14 ? "حديثة"
+                              : days! <= 30 ? "تحتاج متابعة"
+                              : "قديمة";
+                            return (
+                              <tr key={sc._id} className={`group ${!sc.lastVisitDate ? "bg-red-50/20" : days! > 30 ? "bg-orange-50/20" : ""}`}>
+                                <td className="font-bold text-[#2A1418]">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`icon-orb !w-8 !h-8 ${!sc.lastVisitDate ? "bg-red-100 text-red-500" : days! <= 14 ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
+                                      <School size={13} />
+                                    </span>
+                                    {sc.name}
+                                  </div>
+                                </td>
+                                <td className="text-center text-xs font-semibold text-[#5b4a3e]">
+                                  {(sc as {supervisor?: {name: string} | null}).supervisor?.name ?? <span className="text-[#C0B3AA]">غير مسندة</span>}
+                                </td>
+                                <td className="text-center">
+                                  <span className={`pill text-[11px] font-bold ${sc.gender === "male" ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200/70" : "bg-pink-50 text-pink-700 ring-1 ring-pink-200/70"}`}>
+                                    {sc.gender === "male" ? "بنين" : "بنات"}
+                                  </span>
+                                </td>
+                                <td className="text-center text-xs font-bold text-[#2A1418] font-sans">
+                                  {sc.lastVisitDate ?? <span className="text-[#C0B3AA]">—</span>}
+                                </td>
+                                <td className="text-center text-xs font-black text-[#2A1418] font-sans">
+                                  {days != null ? `${days} يوم` : <span className="text-[#C0B3AA]">—</span>}
+                                </td>
+                                <td className="text-center">
+                                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-xl border ${statusColor}`}>
+                                    {!sc.lastVisitDate ? <AlertTriangle size={10} /> : days! <= 14 ? <CheckCircle2 size={10} /> : <AlertTriangle size={10} />}
+                                    {statusLabel}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── قائمة المدارس (العرض الافتراضي) ── */}
+      {viewMode === "list" && <>
 
       {/* فلاتر البحث والفرز */}
       <div className="card-luxurious p-4 flex flex-wrap gap-4 items-center bg-white/70 backdrop-blur-md">
@@ -426,6 +557,8 @@ export default function SchoolsPage() {
           <Check size={16} /> {toast}
         </div>
       )}
+    </>}
+
     </div>
   );
 }

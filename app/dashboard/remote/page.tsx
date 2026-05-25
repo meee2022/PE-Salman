@@ -413,7 +413,7 @@ function Survey() {
               {rows.length > 0
                 ? (() => {
                     const dates = [...new Set(rows.map((r) => r.date))].sort();
-                    const fmt = (d: string) => new Date(d).toLocaleDateString("ar-QA", { day: "numeric", month: "long", year: "numeric" });
+                    const fmt = (d: string) => new Date(d).toLocaleDateString("ar-QA-u-nu-latn", { day: "numeric", month: "long", year: "numeric" });
                     return dates.length === 1
                       ? `تاريخ الاستطلاع: ${fmt(dates[0])} · إجمالي المشاركات: ${rows.length} موجهين`
                       : `فترة الاستطلاع: ${fmt(dates[0])} — ${fmt(dates[dates.length - 1])} · إجمالي المشاركات: ${rows.length} موجهين`;

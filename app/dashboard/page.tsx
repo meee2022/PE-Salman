@@ -6,10 +6,11 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
 import { KpiCard } from "@/components/ui/KpiCard";
+import { MiniSparkline } from "@/components/ui/MiniSparkline";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FadeIn, Stagger, StaggerItem, motion } from "@/components/ui/Motion";
-import { Trophy, ChevronLeft } from "lucide-react";
+import { Trophy, ChevronLeft, AlertTriangle, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import {
   IconSupervisors, IconSchools, IconForms, IconCoverage,
   IconActivity, IconReports, IconMetrics, IconRemote,
@@ -70,12 +71,174 @@ function AlertCard({ name, pct, href }: { name: string; pct: number; href: strin
   );
 }
 
+// مكوّن صغير لعرض الفرق مقارنةً بالعام الماضي
+function Delta({ curr, prev }: { curr: number; prev: number | null | undefined }) {
+  if (prev == null || prev === 0) return null;
+  const diff = curr - prev;
+  if (Math.abs(diff) < 0.5) return <span className="text-[10px] font-bold text-[#C0B3AA] flex items-center gap-0.5"><Minus size={10} />مثل العام الماضي</span>;
+  const up = diff > 0;
+  return (
+    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${up ? "text-emerald-600" : "text-red-500"}`}>
+      {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+      {up ? "+" : ""}{Math.round(diff)}{typeof curr === "number" && curr <= 100 && curr >= 0 ? "%" : ""} من العام الماضي
+    </span>
+  );
+}
+
+/* ── مكوّن: شارة فرق سنوي ──────────────────────────────────────────── */
+function DeltaBadge({ diff, suffix = "" }: { diff: number | null; suffix?: string }) {
+  if (diff === null) return <span className="text-[11px] font-bold text-[#C0B3AA]">لا يوجد</span>;
+  if (Math.abs(diff) < 0.5) return (
+    <span className="text-[11px] font-bold text-[#A89A92] flex items-center gap-0.5">
+      <Minus size={10} />مثل العام الماضي
+    </span>
+  );
+  const up = diff > 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-extrabold px-2 py-0.5 rounded-full ${up ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-red-50 text-red-600 border border-red-200/60"}`}>
+      {up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+      {up ? "+" : ""}{Math.round(diff)}{suffix}
+    </span>
+  );
+}
+
+/* ── مكوّن: مقارنة سنة بسنة ───────────────────────────────────────── */
+function YearCompare({
+  year, prevYear, totalForms, prevTotalForms, avgCoverage, prevAvgCoverage,
+  totalSupervisors, prevCoverageLoaded,
+}: {
+  year: string; prevYear: string;
+  totalForms: number; prevTotalForms: number | null;
+  avgCoverage: number; prevAvgCoverage: number | null;
+  totalSupervisors: number; prevCoverageLoaded: boolean;
+}) {
+  const hasPrev = prevTotalForms != null && (prevTotalForms > 0 || prevAvgCoverage != null);
+
+  const diffForms = hasPrev && prevTotalForms != null ? totalForms - prevTotalForms : null;
+  const diffCov   = hasPrev && prevAvgCoverage != null ? avgCoverage - prevAvgCoverage : null;
+
+  return (
+    <div className="card-luxurious p-5 bg-white/80">
+      {/* رأس القسم */}
+      <div className="flex items-center justify-between border-b border-gold/10 pb-3 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-gold/20 to-primary/20 flex items-center justify-center">
+            <TrendingUp size={14} className="text-gold-dark" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-[#1C1008] text-sm leading-none">مقارنة سنة بسنة</h3>
+            <p className="text-[10px] text-[#A89A92] mt-0.5 font-medium">التغيّر بين {prevYear} و {year}</p>
+          </div>
+        </div>
+        {!hasPrev && prevCoverageLoaded && (
+          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
+            ⚠ لا توجد بيانات للعام السابق
+          </span>
+        )}
+        {!prevCoverageLoaded && (
+          <span className="text-[10px] font-bold text-[#A89A92]">جارٍ التحميل…</span>
+        )}
+      </div>
+
+      {/* خلايا المقارنة */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* الاستمارات */}
+        <div className="rounded-2xl border border-gold/10 bg-gold/[0.03] p-4 flex flex-col gap-2">
+          <p className="text-[11px] font-bold text-[#7A6A58]">إجمالي الاستمارات</p>
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <p className="text-[10px] text-[#A89A92] font-medium">{prevYear}</p>
+              <p className="text-lg font-black text-[#2A1418] font-sans leading-none mt-0.5">
+                {hasPrev && prevTotalForms != null ? prevTotalForms.toLocaleString("en-US") : "—"}
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-px h-8 bg-gradient-to-b from-transparent via-[#C9A96E]/40 to-transparent" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] text-[#A89A92] font-medium">{year}</p>
+              <p className="text-lg font-black text-primary font-sans leading-none mt-0.5">
+                {totalForms.toLocaleString("en-US")}
+              </p>
+            </div>
+          </div>
+          <DeltaBadge diff={diffForms} />
+        </div>
+
+        {/* متوسط التغطية */}
+        <div className="rounded-2xl border border-sky-100 bg-sky-50/30 p-4 flex flex-col gap-2">
+          <p className="text-[11px] font-bold text-[#7A6A58]">متوسط التغطية</p>
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <p className="text-[10px] text-[#A89A92] font-medium">{prevYear}</p>
+              <p className="text-lg font-black text-[#2A1418] font-sans leading-none mt-0.5">
+                {prevAvgCoverage != null ? `${prevAvgCoverage}%` : "—"}
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-px h-8 bg-gradient-to-b from-transparent via-sky-300/40 to-transparent" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] text-[#A89A92] font-medium">{year}</p>
+              <p className="text-lg font-black text-sky-700 font-sans leading-none mt-0.5">{avgCoverage}%</p>
+            </div>
+          </div>
+          <DeltaBadge diff={diffCov} suffix="%" />
+        </div>
+
+        {/* الموجهون */}
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 flex flex-col gap-2">
+          <p className="text-[11px] font-bold text-[#7A6A58]">الموجهون النشطون</p>
+          <div className="flex items-center gap-3 mt-1">
+            <div className="flex-1 space-y-1.5">
+              {/* شريط العام الحالي */}
+              <div>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#A89A92]">{year}</span>
+                  <span className="text-[11px] font-black text-emerald-700 font-sans">{totalSupervisors}</span>
+                </div>
+                <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: "100%" }} />
+                </div>
+              </div>
+              {/* نسبة التغطية كمؤشر بصري */}
+              <div>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#A89A92]">تغطية كاملة ≥100%</span>
+                  <span className="text-[11px] font-black text-primary font-sans">
+                    {hasPrev ? `${Math.round((avgCoverage / 100) * totalSupervisors)} موجه` : "—"}
+                  </span>
+                </div>
+                <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(avgCoverage, 100)}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-[#A89A92] font-medium mt-1">
+            متوسط التغطية الكلية للفريق: <strong className="text-primary">{avgCoverage}%</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
-  const supervisors = useQuery(api.supervisors.list, token ? { token } : "skip");
-  const coverage    = useQuery(api.coverage.listByYear, token ? { academicYear: YEAR, token } : "skip");
-  const schools     = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip");
+  const supervisors   = useQuery(api.supervisors.list, token ? { token } : "skip");
+  const coverage      = useQuery(api.coverage.listByYear, token ? { academicYear: YEAR, token } : "skip");
+  const schools       = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip");
+  const monthlyData   = useQuery(api.activity.monthlyTotals, token ? { academicYear: YEAR, token } : "skip");
+
+  // العام الماضي
+  const prevYear = YEAR.split("-").map((y) => String(parseInt(y) - 1)).join("-");
+  const prevCoverage = useQuery(api.coverage.listByYear, token ? { academicYear: prevYear, token } : "skip");
+
+  // التنبيهات
+  const alerts = useQuery(api.alerts.list, token ? { academicYear: YEAR, token } : "skip");
 
   // نظام ترحيب تفاعلي ذكي يتغير حسب أوقات اليوم
   const [greeting, setGreeting] = useState("مرحباً بك");
@@ -98,6 +261,12 @@ export default function DashboardPage() {
   const totalForms       = coverage.reduce((s, r) => s + r.formsCount, 0);
   const avgCoverage      = coverage.length
     ? Math.round(coverage.reduce((s, r) => s + r.coverageRate, 0) / coverage.length) : 0;
+
+  // مقارنة بالعام الماضي — null = لا بيانات بعد (تحميل أو لا يوجد عام سابق)
+  const prevAvgCoverage = prevCoverage?.length
+    ? Math.round(prevCoverage.reduce((s, r) => s + r.coverageRate, 0) / prevCoverage.length) : null;
+  const prevTotalForms = prevCoverage?.length
+    ? prevCoverage.reduce((s, r) => s + r.formsCount, 0) : null;
 
   const ranked = [...coverage].sort((a, b) => b.coverageRate - a.coverageRate);
   const top = ranked[0];
@@ -157,6 +326,37 @@ export default function DashboardPage() {
         )}
       </motion.section>
 
+      {/* ── بانر التنبيهات ── */}
+      {alerts && alerts.length > 0 && (
+        <div className="card-luxurious border-r-4 !border-r-red-400 bg-red-50/80 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-500 shrink-0" />
+            <p className="text-sm font-extrabold text-red-800">
+              {alerts.length} تنبيه يحتاج إجراء فورياً
+            </p>
+            <Link href="/dashboard/coverage" className="mr-auto text-xs font-bold text-red-600 hover:underline">
+              عرض التغطية ←
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {alerts.slice(0, 6).map((a, i) => (
+              <Link
+                key={i}
+                href={`/dashboard/supervisors/${a.supervisorId}`}
+                className="text-[11px] font-bold text-red-700 bg-white/80 px-3 py-1.5 rounded-xl border border-red-200/60 hover:bg-red-50 transition-colors"
+              >
+                {a.supervisorName} — {a.type === "low_coverage" ? `تغطية ${Math.round(a.coverageRate)}%` : "لا استمارات"}
+              </Link>
+            ))}
+            {alerts.length > 6 && (
+              <span className="text-[11px] font-bold text-red-500 px-3 py-1.5">
+                +{alerts.length - 6} آخرون
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* بطاقات مؤشرات الأداء السريعة (KPIs) */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <KpiCard
@@ -180,22 +380,48 @@ export default function DashboardPage() {
         <KpiCard
           title="الاستمارات المنجزة"
           value={totalForms}
-          sub="إجمالي التقارير المرفوعة"
+          sub={prevTotalForms != null ? <Delta curr={totalForms} prev={prevTotalForms} /> : "إجمالي التقارير المرفوعة"}
           svgIcon={<IconForms size={52} />}
           color="green"
           href="/dashboard/coverage"
           delay={150}
+          sparkline={monthlyData && (
+            <MiniSparkline
+              data={monthlyData.map((m) => ({ month: m.month, value: m.visits + m.develop }))}
+              color="#10b981"
+            />
+          )}
         />
         <KpiCard
           title="متوسط التغطية"
           value={`${avgCoverage}%`}
-          sub="معدل الزيارات الشاملة"
+          sub={prevAvgCoverage != null ? <Delta curr={avgCoverage} prev={prevAvgCoverage} /> : "معدل الزيارات الشاملة"}
           svgIcon={<IconCoverage size={52} />}
           color="blue"
           href="/dashboard/coverage"
           delay={200}
+          sparkline={monthlyData && (
+            <MiniSparkline
+              data={monthlyData.map((m) => ({ month: m.month, value: m.visits }))}
+              color="#0ea5e9"
+            />
+          )}
         />
       </section>
+
+      {/* ── مقارنة سنة بسنة ─────────────────────────────────────────── */}
+      <FadeIn>
+        <YearCompare
+          year={YEAR}
+          prevYear={prevYear}
+          totalForms={totalForms}
+          prevTotalForms={prevTotalForms}
+          avgCoverage={avgCoverage}
+          prevAvgCoverage={prevAvgCoverage}
+          totalSupervisors={totalSupervisors}
+          prevCoverageLoaded={prevCoverage !== undefined}
+        />
+      </FadeIn>
 
       {/* ── لوحة التحليل الإحصائي السريع ─────────────────────────────── */}
       <FadeIn>
