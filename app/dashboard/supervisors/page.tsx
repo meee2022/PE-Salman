@@ -181,7 +181,7 @@ export default function SupervisorsPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setRepairTarget(o)}
+                  onClick={() => setRepairTarget({ orphanedId: o.supervisorId, count: o.count })}
                   className="text-xs font-extrabold text-amber-700 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300/50 transition-all"
                 >
                   إعادة ربط البيانات
