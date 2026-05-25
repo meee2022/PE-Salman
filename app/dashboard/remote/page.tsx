@@ -26,7 +26,7 @@ const DAY_LABELS: { key: "sunday" | "monday" | "tuesday" | "wednesday" | "thursd
 export default function RemotePage() {
   const { user } = useAuth();
   const YEAR = useActiveYear();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const [tab, setTab] = useState<"coverage" | "periods" | "schedule" | "survey">("coverage");
   return (
     <>
@@ -309,7 +309,7 @@ const emptySurvey = (user: any): SurveyForm => ({
 
 function Survey() {
   const { user, token } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const isSupervisor = user?.role === "supervisor";
   
   const rows = useQuery(api.remote.survey, token ? { token } : "skip");
@@ -386,7 +386,6 @@ function Survey() {
       show(form.id ? "تم تحديث المشاركة والاستبيان بنجاح" : "تمت إضافة المشاركة والاستبيان بنجاح");
       setForm(null);
     } catch (e: any) {
-      console.error(e);
       alert(e.message || "حدث خطأ أثناء حفظ البيانات");
     } finally {
       setSaving(false);
@@ -399,7 +398,6 @@ function Survey() {
       await removeSurvey({ id, token: token ?? undefined });
       show("تم حذف المشاركة بنجاح");
     } catch (e: any) {
-      console.error(e);
       alert(e.message || "حدث خطأ أثناء حذف المشاركة");
     }
   }
@@ -411,7 +409,17 @@ function Survey() {
           <span className="icon-orb !w-12 !h-12 bg-gradient-to-br from-[#DFC48E] to-[#A8853A] text-white shadow-md shadow-gold/20"><MessageSquareText size={20} /></span>
           <div>
             <h4 className="font-extrabold text-[#2A1418] text-base">نتائج استطلاع يوم التعلم عن بعد</h4>
-            <p className="text-xs text-gold-dark font-semibold mt-0.5">تاريخ الاستطلاع: 4 نوفمبر 2025 · إجمالي المشاركات: {rows.length} موجهين</p>
+            <p className="text-xs text-gold-dark font-semibold mt-0.5">
+              {rows.length > 0
+                ? (() => {
+                    const dates = [...new Set(rows.map((r) => r.date))].sort();
+                    const fmt = (d: string) => new Date(d).toLocaleDateString("ar-QA", { day: "numeric", month: "long", year: "numeric" });
+                    return dates.length === 1
+                      ? `تاريخ الاستطلاع: ${fmt(dates[0])} · إجمالي المشاركات: ${rows.length} موجهين`
+                      : `فترة الاستطلاع: ${fmt(dates[0])} — ${fmt(dates[dates.length - 1])} · إجمالي المشاركات: ${rows.length} موجهين`;
+                  })()
+                : `إجمالي المشاركات: ${rows.length} موجهين`}
+            </p>
           </div>
         </div>
         {(isAdmin || isSupervisor) && (

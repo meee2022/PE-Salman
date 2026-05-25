@@ -1,36 +1,47 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
 import { Id } from "@/convex/_generated/dataModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PrintButton, PrintHeader } from "@/components/ui/PrintReport";
-import { CalendarDays, ChevronRight, ChevronLeft, X, Eraser, Users, HelpCircle, Check, Info } from "lucide-react";
+import {
+  CalendarDays, ChevronRight, ChevronLeft, X, Eraser,
+  Users, HelpCircle, Check, Info, FileDown, RotateCcw,
+} from "lucide-react";
 
 import { useActiveYear } from "@/hooks/useActiveYear";
+import { EXCEL_ACTIVITY_DATA } from "@/lib/excelActivityData";
+import { getWeekInfo } from "@/lib/weeklySchedule";
 
-type Code = "OF" | "VS" | "CL" | "LV" | "SL" | "TR" | "MT" | "AC" | "AB" | "SP" | "VP" | "OL" | "WP";
+type Code =
+  | "OF" | "VS" | "CL" | "LV" | "SL" | "TR" | "MT" | "AC"
+  | "AB" | "SP" | "VP" | "OL" | "WP" | "HC" | "CA";
 
-const CODES: { code: Code; short: string; label: string; cell: string; chip: string; hdr: string }[] = [
-  { code: "VS", short: "زيارة",  label: "زيارة صفية",    cell: "bg-emerald-500/10 text-emerald-700 border border-emerald-300/35", chip: "bg-emerald-500", hdr: "#10b981" },
-  { code: "CL", short: "عارضة",  label: "زيارة عارضة",   cell: "bg-emerald-500/5 text-emerald-600 border border-emerald-200/30",  chip: "bg-emerald-400", hdr: "#34d399" },
-  { code: "OF", short: "مكتبي",  label: "عمل مكتبي",     cell: "bg-[#5C1523]/5 text-[#5C1523] border border-[#5C1523]/20",       chip: "bg-[#5C1523]",  hdr: "#C9A96E" },
-  { code: "MT", short: "اجتماع", label: "اجتماع فني",    cell: "bg-[#7A1E30]/5 text-[#7A1E30] border border-[#7A1E30]/20",       chip: "bg-[#7A1E30]",  hdr: "#E8DECF" },
-  { code: "TR", short: "تطوير",  label: "تطوير مهني",    cell: "bg-sky-500/10 text-sky-700 border border-sky-300/35",            chip: "bg-sky-500",    hdr: "#0ea5e9" },
-  { code: "OL", short: "عن بعد", label: "تعلم عن بعد",   cell: "bg-sky-500/5 text-sky-600 border border-sky-200/30",            chip: "bg-sky-400",    hdr: "#38bdf8" },
-  { code: "AC", short: "أنشطة",  label: "أنشطة رياضية",  cell: "bg-amber-500/10 text-amber-700 border border-amber-300/35",      chip: "bg-amber-500",  hdr: "#f59e0b" },
-  { code: "SP", short: "رسمية",  label: "مهمة رسمية",    cell: "bg-amber-500/10 text-amber-800 border border-amber-300/35",      chip: "bg-amber-600",  hdr: "#d97706" },
-  { code: "VP", short: "مهمة",   label: "مهمة عمل",      cell: "bg-amber-500/5 text-amber-700 border border-amber-200/30",       chip: "bg-amber-500",  hdr: "#fbbf24" },
-  { code: "LV", short: "إجازة",  label: "إجازة اعتيادية",cell: "bg-orange-500/10 text-orange-700 border border-orange-200",      chip: "bg-orange-500", hdr: "#f97316" },
-  { code: "SL", short: "مرضية",  label: "إجازة مرضية",   cell: "bg-orange-500/5 text-orange-600 border border-orange-200/50",    chip: "bg-orange-400", hdr: "#fb923c" },
-  { code: "WP", short: "إذن",    label: "إذن رسمي",      cell: "bg-orange-500/5 text-orange-600 border border-orange-200/50",    chip: "bg-orange-400", hdr: "#fdba74" },
-  { code: "AB", short: "غياب",   label: "غياب بدون عذر", cell: "bg-red-500/10 text-red-700 border border-red-200",              chip: "bg-red-500",    hdr: "#ef4444" },
+const CODES: {
+  code: Code; short: string; label: string;
+  cell: string; chip: string; hdr: string;
+}[] = [
+  { code: "VS", short: "زيارة",   label: "زيارة صفية",      cell: "bg-emerald-500/10 text-emerald-700 border border-emerald-300/35",  chip: "bg-emerald-500",  hdr: "#10b981" },
+  { code: "CL", short: "عارضة",   label: "زيارة عارضة",     cell: "bg-emerald-500/5 text-emerald-600 border border-emerald-200/30",   chip: "bg-emerald-400",  hdr: "#34d399" },
+  { code: "OF", short: "مكتبي",   label: "عمل مكتبي",       cell: "bg-[#5C1523]/5 text-[#5C1523] border border-[#5C1523]/20",        chip: "bg-[#5C1523]",    hdr: "#C9A96E" },
+  { code: "MT", short: "اجتماع",  label: "اجتماع فني",      cell: "bg-[#7A1E30]/5 text-[#7A1E30] border border-[#7A1E30]/20",        chip: "bg-[#7A1E30]",    hdr: "#E8DECF" },
+  { code: "TR", short: "تطوير",   label: "تطوير مهني",      cell: "bg-sky-500/10 text-sky-700 border border-sky-300/35",             chip: "bg-sky-500",      hdr: "#0ea5e9" },
+  { code: "OL", short: "بُعد",    label: "تعلم عن بعد",     cell: "bg-sky-500/5 text-sky-600 border border-sky-200/30",             chip: "bg-sky-400",      hdr: "#38bdf8" },
+  { code: "AC", short: "أنشطة",   label: "أنشطة رياضية",    cell: "bg-amber-500/10 text-amber-700 border border-amber-300/35",       chip: "bg-amber-500",    hdr: "#f59e0b" },
+  { code: "SP", short: "رسمية",   label: "مهمة رسمية",      cell: "bg-amber-500/10 text-amber-800 border border-amber-300/35",       chip: "bg-amber-600",    hdr: "#d97706" },
+  { code: "VP", short: "مهمة",    label: "مهمة عمل",        cell: "bg-amber-500/5 text-amber-700 border border-amber-200/30",        chip: "bg-amber-500",    hdr: "#fbbf24" },
+  { code: "LV", short: "إجازة",   label: "إجازة اعتيادية",  cell: "bg-orange-500/10 text-orange-700 border border-orange-200",       chip: "bg-orange-500",   hdr: "#f97316" },
+  { code: "CA", short: "عارضة",   label: "إجازة عارضة",     cell: "bg-orange-400/15 text-orange-600 border border-orange-300/40",    chip: "bg-orange-400",   hdr: "#fb923c" },
+  { code: "SL", short: "مرضية",   label: "إجازة مرضية",     cell: "bg-rose-500/10 text-rose-700 border border-rose-200/50",          chip: "bg-rose-400",     hdr: "#fb7185" },
+  { code: "HC", short: "حج",      label: "إجازة الحج",      cell: "bg-teal-500/10 text-teal-700 border border-teal-200",             chip: "bg-teal-500",     hdr: "#14b8a6" },
+  { code: "WP", short: "إذن",     label: "إذن رسمي",        cell: "bg-purple-500/10 text-purple-700 border border-purple-200/50",    chip: "bg-purple-400",   hdr: "#a855f7" },
+  { code: "AB", short: "غياب",    label: "غياب بدون عذر",   cell: "bg-red-500/10 text-red-700 border border-red-200",               chip: "bg-red-500",      hdr: "#ef4444" },
 ];
 
-const CODE_MAP = Object.fromEntries(CODES.map((c) => [c.code, c]));
-
+const CODE_MAP = Object.fromEntries(CODES.map((c) => [c.code, c])) as Record<Code, typeof CODES[0]>;
 const AR_MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
 export default function ActivityPage() {
@@ -40,23 +51,16 @@ export default function ActivityPage() {
     <div className="space-y-6">
       <PageHeader
         title="سجل النشاط الإشرافي"
-        subtitle={`13 تصنيفاً معتمداً للنشاط الميداني والبدني · العام ${YEAR}`}
+        subtitle={`15 تصنيفاً معتمداً للنشاط الميداني · العام ${YEAR}`}
         icon={<CalendarDays size={26} />}
         action={<PrintButton />}
       />
       <PrintHeader title="تقرير سجل النشاط الفني للموجهين" subtitle={`العام الدراسي الرياضي ${YEAR}`} />
 
-      {/* تبويبات الفلترة الزمنية */}
       <div className="no-print flex gap-2.5 p-1.5 bg-white/50 backdrop-blur-md rounded-2xl border border-gold/15 animate-in overflow-x-auto no-scrollbar max-w-max">
-        <TabBtn active={tab === "week"} onClick={() => setTab("week")}>
-          الجدول الأسبوعي
-        </TabBtn>
-        <TabBtn active={tab === "month"} onClick={() => setTab("month")}>
-          الجدول الشهري
-        </TabBtn>
-        <TabBtn active={tab === "summary"} onClick={() => setTab("summary")}>
-          التقرير السنوي العام
-        </TabBtn>
+        <TabBtn active={tab === "week"} onClick={() => setTab("week")}>الجدول الأسبوعي</TabBtn>
+        <TabBtn active={tab === "month"} onClick={() => setTab("month")}>الجدول الشهري</TabBtn>
+        <TabBtn active={tab === "summary"} onClick={() => setTab("summary")}>التقرير السنوي العام</TabBtn>
       </div>
 
       {tab === "summary" ? <AnnualSummary /> : <EntryGrid mode={tab} />}
@@ -75,44 +79,65 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
       }`}
     >
       {children}
-      {active && (
-        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-      )}
+      {active && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
     </button>
   );
 }
 
-/* ───────────────────────── شبكة الإدخال (أسبوعي/شهري) ───────────────────────── */
-const AR_WEEK = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+/* ───────────────────── شبكة الإدخال ───────────────────── */
+const AR_WEEK = ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
 
 interface DayCell { ds: string; dayNum: number; wd: string; weekend: boolean; monthIdx: number }
+interface LogEntry { code: Code; notes?: string }
 
 function startOfWeek(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  x.setDate(x.getDate() - x.getDay()); // الأحد بداية الأسبوع في الخليج
-  return x;
+  const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - x.getDay()); return x;
 }
 function toDS(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function makeDay(d: Date): DayCell {
   const wd = d.getDay();
-  return { ds: toDS(d), dayNum: d.getDate(), wd: AR_WEEK[wd], weekend: wd === 5 || wd === 6, monthIdx: d.getMonth() };
+  return { ds: toDS(d), dayNum: d.getDate(), wd: AR_WEEK[wd], weekend: wd===5||wd===6, monthIdx: d.getMonth() };
+}
+
+/** مفتاح قصير محسوب لحظياً من الاسم بعد تطبيع عربي موحّد
+ *  يُستخدم لدمج المكررين الذين قد تختلف shortKey المخزونة بينهم */
+function computeGroupKey(name: string): string {
+  const n = name
+    .replace(/\xa0/g, " ")
+    .replace(/ـ/g, "")
+    .replace(/[ً-ْٰ]/g, "")  // حركات وتشكيل
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = n.split(" ");
+  // اول كلمة + آخر كلمة (أقل عرضة للاختلاف في أسماء المكررين)
+  return parts.length >= 2 ? `${parts[0]} ${parts[parts.length - 1]}` : n;
 }
 
 function EntryGrid({ mode }: { mode: "week" | "month" }) {
   const YEAR = useActiveYear();
-  const [anchor, setAnchor] = useState(() => new Date("2025-12-01"));
+  const [anchor, setAnchor] = useState(() => new Date());
+  const { token, user } = useAuth();
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
+  const isSupervisor = user?.role === "supervisor";
+  const readOnly = isSupervisor; // الموجه يرى فقط، لا يعدّل
 
-  const { token } = useAuth();
   const supervisors = useQuery(api.supervisors.list, token ? { token } : "skip");
-  const logActivity = useMutation(api.activity.logActivity);
+  const logActivity   = useMutation(api.activity.logActivity);
   const clearActivity = useMutation(api.activity.clearActivity);
-  const bulkLog = useMutation(api.activity.bulkLog);
-  const bulkClear = useMutation(api.activity.bulkClear);
+  const bulkLog       = useMutation(api.activity.bulkLog);
+  const bulkClear     = useMutation(api.activity.bulkClear);
+  const importLogs    = useMutation(api.activity.importSupervisorLogs);
 
-  const [picker, setPicker] = useState<{ supId: Id<"supervisors">; supName: string; ds: string; label: string } | null>(null);
+  const [picker, setPicker] = useState<{
+    supId: Id<"supervisors">; supName: string; ds: string; label: string;
+    currentCode?: Code; currentNote?: string;
+  } | null>(null);
+  const [pickerNote, setPickerNote] = useState("");
   const [bulkMode, setBulkMode] = useState(false);
   const [selected, setSelected] = useState<Set<Id<"supervisors">>>(new Set());
   const [bulkFrom, setBulkFrom] = useState(0);
@@ -120,69 +145,83 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [toast, setToast]       = useState<string | null>(null);
 
-  // أيام الفترة الظاهرة
+  // استيراد Excel
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<string | null>(null);
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const [jumpPos, setJumpPos] = useState({ top: 0, left: 0 });
+  const jumpBtnRef = useRef<HTMLButtonElement>(null);
+  const jumpRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!jumpOpen) return;
+    function handle(e: MouseEvent) {
+      if (jumpRef.current && !jumpRef.current.contains(e.target as Node) &&
+          jumpBtnRef.current && !jumpBtnRef.current.contains(e.target as Node)) {
+        setJumpOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [jumpOpen]);
+  function openJump() {
+    if (jumpBtnRef.current) {
+      const r = jumpBtnRef.current.getBoundingClientRect();
+      setJumpPos({ top: r.bottom + 8, left: r.left + r.width / 2 });
+    }
+    setJumpOpen(v => !v);
+  }
+
   const days = useMemo<DayCell[]>(() => {
     if (mode === "week") {
       const s = startOfWeek(anchor);
       return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(s);
-        d.setDate(s.getDate() + i);
-        return makeDay(d);
-      });
+        const d = new Date(s); d.setDate(s.getDate() + i); return makeDay(d);
+      }).filter(d => !d.weekend); // إزالة الجمعة والسبت (عطلة رسمية)
     }
     const y = anchor.getFullYear(), m = anchor.getMonth();
-    const n = new Date(y, m + 1, 0).getDate();
-    return Array.from({ length: n }, (_, i) => makeDay(new Date(y, m, i + 1)));
+    const n = new Date(y, m+1, 0).getDate();
+    return Array.from({ length: n }, (_, i) => makeDay(new Date(y, m, i+1)))
+      .filter(d => !d.weekend); // إزالة الجمعة والسبت (عطلة رسمية)
   }, [mode, anchor]);
 
-  // إعادة ضبط نطاق الإدخال الجماعي عند تغيّر الفترة
-  const periodKey = days[0]?.ds + "_" + days[days.length - 1]?.ds;
-  useEffect(() => {
-    setBulkFrom(0);
-    setBulkTo(days.length - 1);
-  }, [periodKey]);
+  const periodKey = days[0]?.ds + "_" + days[days.length-1]?.ds;
+  useEffect(() => { setBulkFrom(0); setBulkTo(days.length-1); }, [periodKey]);
 
-  const start = days[0]?.ds, end = days[days.length - 1]?.ds;
+  const start = days[0]?.ds, end = days[days.length-1]?.ds;
   const logs = useQuery(api.activity.logsInRange, token && start && end ? { start, end, token } : "skip");
 
   const logMap = useMemo(() => {
-    const m = new Map<string, Code>();
-    (logs ?? []).forEach((l) => m.set(`${l.supervisorId}_${l.date}`, l.code as Code));
+    const m = new Map<string, LogEntry>();
+    (logs ?? []).forEach((l) => m.set(`${l.supervisorId}_${l.date}`, { code: l.code as Code, notes: l.notes ?? undefined }));
     return m;
   }, [logs]);
 
-  function shift(deltaDays: number) {
-    setAnchor((a) => {
-      const d = new Date(a);
-      d.setDate(d.getDate() + deltaDays);
-      return d;
-    });
-  }
-  function shiftMonth(delta: number) {
-    setAnchor((a) => {
-      const d = new Date(a);
-      d.setMonth(d.getMonth() + delta);
-      return d;
-    });
-  }
-  function prev() { mode === "week" ? shift(-7) : shiftMonth(-1); }
-  function next() { mode === "week" ? shift(7) : shiftMonth(1); }
-  function showToast(m: string) {
-    setToast(m);
-    setTimeout(() => setToast(null), 3000);
-  }
+  function shift(d: number) { setAnchor(a => { const x = new Date(a); x.setDate(x.getDate()+d); return x; }); }
+  function shiftMonth(d: number) { setAnchor(a => { const x = new Date(a); x.setMonth(x.getMonth()+d); return x; }); }
+  function prev() { mode==="week" ? shift(-7) : shiftMonth(-1); }
+  function next() { mode==="week" ? shift(7) : shiftMonth(1); }
+  function showToast(m: string) { setToast(m); setTimeout(() => setToast(null), 3500); }
 
   const periodLabel = (() => {
     if (!days.length) return "";
-    if (mode === "month") return `${AR_MONTHS[days[0].monthIdx]} ${days[0].ds.slice(0, 4)}`;
-    const a = days[0], b = days[days.length - 1];
+    if (mode === "month") return `${AR_MONTHS[days[0].monthIdx]} ${days[0].ds.slice(0,4)}`;
+    const a = days[0], b = days[days.length-1];
     if (a.monthIdx === b.monthIdx) return `${a.dayNum} – ${b.dayNum} ${AR_MONTHS[a.monthIdx]}`;
     return `${a.dayNum} ${AR_MONTHS[a.monthIdx]} – ${b.dayNum} ${AR_MONTHS[b.monthIdx]}`;
   })();
 
+  // معرفة رقم الأسبوع الدراسي الحالي
+  const weekInfo = mode === "week" && days.length > 0
+    ? getWeekInfo(days[0].ds)
+    : null;
+
   async function setCode(code: Code) {
     if (!picker) return;
-    await logActivity({ supervisorId: picker.supId, date: picker.ds, code, academicYear: YEAR, token: token ?? undefined });
+    await logActivity({
+      supervisorId: picker.supId, date: picker.ds, code,
+      notes: pickerNote.trim() || undefined,
+      academicYear: YEAR, token: token ?? undefined,
+    });
     setPicker(null);
   }
   async function clearCode() {
@@ -191,18 +230,14 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
     setPicker(null);
   }
   function toggleSel(id: Id<"supervisors">) {
-    setSelected((p) => {
-      const n = new Set(p);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
+    setSelected(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
   function toggleAll(allIds: Id<"supervisors">[]) {
     setSelected(selected.size === allIds.length ? new Set() : new Set(allIds));
   }
   function bulkDates() {
     const from = Math.min(bulkFrom, bulkTo), to = Math.max(bulkFrom, bulkTo);
-    return days.slice(from, to + 1).map((d) => d.ds);
+    return days.slice(from, to+1).map(d => d.ds);
   }
   function bulkSpan() {
     const from = Math.min(bulkFrom, bulkTo), to = Math.max(bulkFrom, bulkTo);
@@ -214,9 +249,7 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
     try {
       await bulkLog({ supervisorIds: Array.from(selected), dates: bulkDates(), code, academicYear: YEAR, token: token ?? undefined });
       showToast(`تم إدخال "${CODE_MAP[code].label}" لـ ${selected.size} موجه (الأيام ${bulkSpan()})`);
-    } finally {
-      setBulkBusy(false);
-    }
+    } finally { setBulkBusy(false); }
   }
   async function applyBulkClear() {
     if (selected.size === 0) return;
@@ -224,10 +257,63 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
     try {
       const n = await bulkClear({ supervisorIds: Array.from(selected), dates: bulkDates(), token: token ?? undefined });
       showToast(`تم حذف ${n} إدخال لـ ${selected.size} موجه (الأيام ${bulkSpan()})`);
+    } finally { setBulkBusy(false); }
+  }
+
+  // ── استيراد بيانات Excel ──────────────────────────────────
+  async function handleImportExcel() {
+    if (!confirm("سيتم استيراد جميع بيانات جدول الزيارات الأسبوعي من ملف Excel. هل تريد المتابعة؟")) return;
+    setImporting(true);
+    let totalInserted = 0, totalUpdated = 0;
+    try {
+      for (let i = 0; i < EXCEL_ACTIVITY_DATA.length; i++) {
+        const sup = EXCEL_ACTIVITY_DATA[i];
+        setImportProgress(`جاري استيراد بيانات ${sup.name} (${i+1}/${EXCEL_ACTIVITY_DATA.length})...`);
+        const result = await importLogs({
+          supervisorName: sup.name,
+          academicYear: "2025-2026",
+          logs: sup.logs as any,
+          token: token ?? undefined,
+        });
+        totalInserted += result.inserted;
+        totalUpdated  += result.updated;
+      }
+      showToast(`✅ تم الاستيراد: ${totalInserted} إدخال جديد، ${totalUpdated} محدَّث`);
+    } catch (e: any) {
+      showToast(`❌ خطأ في الاستيراد: ${e?.message ?? "خطأ غير معروف"}`);
     } finally {
-      setBulkBusy(false);
+      setImporting(false);
+      setImportProgress(null);
     }
   }
+
+  // إزالة المكررين — يجب قبل أي return مبكر (قاعدة hooks لا تتغير بين renders)
+  const { displaySups, groupIds } = useMemo(() => {
+    const sups = supervisors ?? [];
+    const byShort = new Map<string, { primary: typeof sups[0]; allIds: string[] }>();
+    for (const s of sups) {
+      // نحسب المفتاح لحظياً من الاسم (لا نعتمد على الحقل المخزون الذي قد يختلف)
+      const key = computeGroupKey(s.name);
+      const prev = byShort.get(key);
+      if (!prev) {
+        byShort.set(key, { primary: s, allIds: [s._id as string] });
+      } else {
+        prev.allIds.push(s._id as string);
+        if (s.seq < prev.primary.seq) prev.primary = s;
+      }
+    }
+    const gids = new Map<string, string[]>();
+    const display: typeof sups[0][] = [];
+    for (const { primary, allIds } of byShort.values()) {
+      display.push(primary);
+      // ندمج: IDs من التجميع بالـ shortKey + duplicateIds المُعادة من السيرفر (nameKey)
+      const serverDups: string[] = (primary as any).duplicateIds ?? [];
+      const combined = Array.from(new Set([...allIds, ...serverDups]));
+      gids.set(primary._id as string, combined);
+    }
+    display.sort((a, b) => a.seq - b.seq);
+    return { displaySups: display, groupIds: gids };
+  }, [supervisors]);
 
   if (!supervisors || logs === undefined) {
     return (
@@ -236,46 +322,79 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
       </div>
     );
   }
-  
-  const allIds = supervisors.map((s) => s._id);
-  const cellW = mode === "week" ? "min-w-[66px]" : "min-w-[56px] w-[56px]";
+
+  const allIds = displaySups.map(s => s._id);
+  const cellW = mode === "week" ? "min-w-[72px]" : "min-w-[48px] w-[48px]";
 
   return (
     <>
-      {/* شريط الأدوات التنفيذي */}
+      {/* شريط الأدوات */}
       <div className="no-print card-luxurious p-4 flex items-center justify-between gap-3 flex-wrap animate-in">
-        <div className="flex items-center gap-2">
-          <button onClick={prev} className="btn-ghost !px-2.5 hover:ring-1 hover:ring-gold/30">
-            <ChevronRight size={16} />
-          </button>
-          <span className="font-extrabold text-sm text-[#2A1418] min-w-36 text-center select-none bg-[#FCF9F2] px-4 py-2 rounded-xl border border-gold/15 shadow-inner">
-            {periodLabel}
-          </span>
-          <button onClick={next} className="btn-ghost !px-2.5 hover:ring-1 hover:ring-gold/30">
-            <ChevronLeft size={16} />
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={prev} className="btn-ghost !px-2.5 hover:ring-1 hover:ring-gold/30"><ChevronRight size={16} /></button>
+          <div className="flex flex-col items-center">
+            <button
+              ref={jumpBtnRef}
+              onClick={openJump}
+              className="font-extrabold text-xs sm:text-sm text-[#2A1418] min-w-28 sm:min-w-36 text-center bg-[#FCF9F2] px-4 py-2 rounded-xl border border-gold/15 shadow-inner hover:border-gold/40 hover:bg-[#F5EFE0] transition-all"
+              title="اضغط للانتقال السريع"
+            >
+              {periodLabel}
+            </button>
+            {weekInfo && (
+              <span className="mt-1 text-[10px] font-extrabold px-3 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/15 whitespace-nowrap">
+                {weekInfo.label} · أسبوع {weekInfo.num}/44
+              </span>
+            )}
+          </div>
+          <button onClick={next} className="btn-ghost !px-2.5 hover:ring-1 hover:ring-gold/30"><ChevronLeft size={16} /></button>
           <button onClick={() => setAnchor(new Date())} className="text-xs text-primary font-extrabold hover:text-primary/80 transition-colors mr-2">
             اليوم الحالي
           </button>
         </div>
-        
-        <button
-          onClick={() => {
-            setBulkMode((v) => !v);
-            setSelected(new Set());
-          }}
-          className={
-            bulkMode
-              ? "btn-primary shadow-lg shadow-primary/10 flex items-center gap-1.5 text-xs font-extrabold !py-2.5 !px-5"
-              : "btn-ghost hover:ring-1 hover:ring-gold/30 flex items-center gap-1.5 text-xs font-extrabold !py-2.5 !px-5"
-          }
-        >
-          <Users size={15} />
-          {bulkMode ? "إنهاء الإدخال الجماعي" : "تفعيل الإدخال الجماعي"}
-        </button>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* شارة "عرض للقراءة فقط" للموجه */}
+          {readOnly && (
+            <span className="text-[10px] font-extrabold px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200">
+              سجلك الخاص — للاطلاع فقط
+            </span>
+          )}
+          {isAdmin && (
+            <button
+              onClick={handleImportExcel}
+              disabled={importing}
+              className="btn-ghost hover:ring-1 hover:ring-gold/30 flex items-center gap-1.5 text-xs font-extrabold !py-2 !px-4 text-teal-700 border-teal-300/40 hover:bg-teal-50 disabled:opacity-60"
+            >
+              <FileDown size={14} />
+              {importing ? "جاري الاستيراد..." : "استيراد بيانات Excel"}
+            </button>
+          )}
+          {!readOnly && (
+            <button
+              onClick={() => { setBulkMode(v => !v); setSelected(new Set()); }}
+              className={
+                bulkMode
+                  ? "btn-primary shadow-lg shadow-primary/10 flex items-center gap-1.5 text-xs font-extrabold !py-2.5 !px-5"
+                  : "btn-ghost hover:ring-1 hover:ring-gold/30 flex items-center gap-1.5 text-xs font-extrabold !py-2.5 !px-5"
+              }
+            >
+              <Users size={15} />
+              {bulkMode ? "إنهاء الإدخال الجماعي" : "تفعيل الإدخال الجماعي"}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* لوحة الإدخال الجماعي الفخمة */}
+      {/* شريط تقدم الاستيراد */}
+      {importing && importProgress && (
+        <div className="no-print card-luxurious p-3 flex items-center gap-3 bg-teal-50/80 border border-teal-200 animate-in">
+          <div className="w-5 h-5 rounded-full border-2 border-teal-400 border-t-teal-600 animate-spin shrink-0" />
+          <p className="text-xs font-bold text-teal-800">{importProgress}</p>
+        </div>
+      )}
+
+      {/* لوحة الإدخال الجماعي */}
       {bulkMode && (
         <div className="no-print card-luxurious p-5 space-y-4 animate-in border-r-4 !border-r-primary bg-gradient-to-l from-white via-[#FCFAF5] to-[#F7F2E6] shadow-xl relative overflow-hidden">
           <div className="pattern-arabesque absolute inset-0 opacity-[0.06] pointer-events-none" />
@@ -288,56 +407,33 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                 {selected.size === allIds.length ? "إلغاء تحديد الكل" : "تحديد كافة الموجهين"}
               </button>
             </div>
-            
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[#8A7A72] font-bold">من تاريخ:</span>
-              <select
-                value={bulkFrom}
-                onChange={(e) => setBulkFrom(+e.target.value)}
-                className="bg-[#FCF9F2] text-[#2A1418] border border-gold/25 text-xs font-extrabold rounded-xl px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary shadow-sm"
-              >
-                {days.map((d, i) => (
-                  <option key={d.ds} value={i}>
-                    {d.wd} {d.dayNum}
-                  </option>
-                ))}
+              <span className="text-[#8A7A72] font-bold">من:</span>
+              <select value={bulkFrom} onChange={e => setBulkFrom(+e.target.value)}
+                className="bg-[#FCF9F2] text-[#2A1418] border border-gold/25 text-xs font-extrabold rounded-xl px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary shadow-sm">
+                {days.map((d,i) => <option key={d.ds} value={i}>{d.wd} {d.dayNum}</option>)}
               </select>
-              <span className="text-[#8A7A72] font-bold mr-1">إلى:</span>
-              <select
-                value={bulkTo}
-                onChange={(e) => setBulkTo(+e.target.value)}
-                className="bg-[#FCF9F2] text-[#2A1418] border border-gold/25 text-xs font-extrabold rounded-xl px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary shadow-sm"
-              >
-                {days.map((d, i) => (
-                  <option key={d.ds} value={i}>
-                    {d.wd} {d.dayNum}
-                  </option>
-                ))}
+              <span className="text-[#8A7A72] font-bold">إلى:</span>
+              <select value={bulkTo} onChange={e => setBulkTo(+e.target.value)}
+                className="bg-[#FCF9F2] text-[#2A1418] border border-gold/25 text-xs font-extrabold rounded-xl px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary shadow-sm">
+                {days.map((d,i) => <option key={d.ds} value={i}>{d.wd} {d.dayNum}</option>)}
               </select>
             </div>
           </div>
-
           <div className="relative pt-2">
             <p className="text-xs text-stone-500 mb-3.5 font-bold flex items-center gap-1.5 select-none">
               <Info size={14} className="text-gold" />
-              اختر نوع النشاط المراد تطبيقه على الفترة المحددة للموجهين المختارين:
+              اختر نوع النشاط للفترة والموجهين المحددين:
             </p>
             <div className="flex flex-wrap gap-2">
-              {CODES.map((c) => (
-                <button
-                  key={c.code}
-                  disabled={selected.size === 0 || bulkBusy}
-                  onClick={() => applyBulk(c.code)}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition-all disabled:opacity-40 hover:ring-2 hover:ring-gold/30 shadow-sm ${c.cell}`}
-                >
+              {CODES.map(c => (
+                <button key={c.code} disabled={selected.size===0||bulkBusy} onClick={() => applyBulk(c.code)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition-all disabled:opacity-40 hover:ring-2 hover:ring-gold/30 shadow-sm ${c.cell}`}>
                   {c.label}
                 </button>
               ))}
-              <button
-                disabled={selected.size === 0 || bulkBusy}
-                onClick={applyBulkClear}
-                className="px-3.5 py-1.5 rounded-xl text-[10px] font-extrabold transition-all disabled:opacity-40 hover:ring-2 hover:ring-red-400 bg-red-500/10 text-red-700 border border-red-200 inline-flex items-center gap-1 shadow-sm"
-              >
+              <button disabled={selected.size===0||bulkBusy} onClick={applyBulkClear}
+                className="px-3.5 py-1.5 rounded-xl text-[10px] font-extrabold transition-all disabled:opacity-40 hover:ring-2 hover:ring-red-400 bg-red-500/10 text-red-700 border border-red-200 inline-flex items-center gap-1 shadow-sm">
                 <Eraser size={12} /> مسح المدخلات للفترة
               </button>
             </div>
@@ -345,23 +441,15 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
         </div>
       )}
 
-      {/* عنوان الفترة المطبوعة */}
-      <p className="print-only" style={{ textAlign: "center", fontWeight: 700, color: "#5C1523", margin: "0 0 10px", fontSize: "14px" }}>
-        سجل أنشطة الموجهين للفترة: {periodLabel}
-      </p>
-
-      {/* دليل ومفتاح الأكواد */}
+      {/* دليل الأكواد */}
       {!bulkMode && (
         <div className="no-print card-luxurious p-4 flex flex-wrap gap-2 animate-in bg-white/80 backdrop-blur-md relative overflow-hidden select-none border border-gold/15">
           <div className="w-full text-[10px] font-extrabold text-[#5C1523] mb-2 flex items-center gap-1.5">
             <HelpCircle size={13} className="text-gold" />
             دليل اختصارات وأكواد الأنشطة المعتمدة في الإدارة:
           </div>
-          {CODES.map((c) => (
-            <span
-              key={c.code}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-extrabold shadow-sm ${c.cell}`}
-            >
+          {CODES.map(c => (
+            <span key={c.code} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-extrabold shadow-sm ${c.cell}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${c.chip}`} />
               {c.label} ({c.short})
             </span>
@@ -369,33 +457,29 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
         </div>
       )}
 
-      {/* الشبكة والتخطيط الإشرافي */}
-      <div className="glass-table-container animate-in">
-        <div className="overflow-x-auto">
+      {/* الشبكة الرئيسية */}
+      <div className="glass-table-container animate-in relative">
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 hidden sm:hidden max-sm:block" />
+        <div className="overflow-x-auto overscroll-x-contain" style={{ WebkitOverflowScrolling: "touch" }}>
           <table className={`glass-table ${mode === "week" ? "w-full" : ""}`}>
             <thead>
               <tr>
                 <th
-                  className="sticky right-0 z-20 bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] px-4 py-3.5 text-right text-xs font-extrabold text-[#EBD9B4] min-w-44 border-l border-gold/25"
+                  className="sticky right-0 z-20 bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] px-2 sm:px-4 py-3.5 text-right text-xs font-extrabold text-[#EBD9B4] min-w-28 sm:min-w-44 border-l border-gold/25"
                   style={{ borderBottom: "2px solid var(--gold)" }}
                 >
                   {bulkMode ? (
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+                      <input type="checkbox"
                         checked={selected.size === allIds.length && allIds.length > 0}
                         onChange={() => toggleAll(allIds)}
-                        className="accent-gold w-4 h-4 rounded"
-                      />
+                        className="accent-gold w-4 h-4 rounded" />
                       قائمة الموجهين
                     </label>
-                  ) : (
-                    "الموجه التربوي"
-                  )}
+                  ) : "الموجه التربوي"}
                 </th>
-                {days.map((d) => (
-                  <th
-                    key={d.ds}
+                {days.map(d => (
+                  <th key={d.ds}
                     className={`px-1 py-2 text-center ${cellW} ${
                       d.weekend
                         ? "bg-[#3A0B14] text-white/45"
@@ -405,65 +489,69 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                   >
                     <div className="text-[9px] font-extrabold opacity-80">{d.wd}</div>
                     <div className="text-xs font-extrabold mt-0.5">{d.dayNum}</div>
+                    <div className="text-[8px] opacity-50">{AR_MONTHS[d.monthIdx].slice(0,3)}</div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {supervisors.map((sup) => {
+              {displaySups.map(sup => {
                 const sel = selected.has(sup._id);
+                // كل IDs المرتبطة بهذا الموجه (أصل + مكررات shortKey)
+                const supAllIds: string[] = groupIds.get(sup._id as string) ?? [sup._id as string];
                 return (
                   <tr key={sup._id} className={`hover:bg-gold/5 transition-colors border-b border-gold/5 last:border-b-0 ${sel ? "!bg-gold/[0.07]" : ""}`}>
-                    <td
-                      className={`sticky right-0 z-10 px-4 py-3 font-extrabold text-[#2A1418] text-xs border-l border-gold/15 whitespace-nowrap transition-colors ${
-                        sel ? "bg-[#FBF4E9]" : "bg-white"
-                      }`}
-                    >
+                    <td className={`sticky right-0 z-10 px-2 sm:px-4 py-3 font-extrabold text-[#2A1418] text-xs border-l border-gold/15 whitespace-nowrap transition-colors max-w-[112px] sm:max-w-none overflow-hidden text-ellipsis ${sel ? "bg-[#FBF4E9]" : "bg-white"}`}>
                       {bulkMode ? (
                         <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={sel}
-                            onChange={() => toggleSel(sup._id)}
-                            className="accent-primary w-4 h-4 rounded"
-                          />
+                          <input type="checkbox" checked={sel} onChange={() => toggleSel(sup._id)} className="accent-primary w-4 h-4 rounded" />
                           {sup.name}
                         </label>
-                      ) : (
-                        sup.name
-                      )}
+                      ) : sup.name}
                     </td>
-                    
-                    {days.map((d) => {
-                      const code = logMap.get(`${sup._id}_${d.ds}`);
-                      const meta = code ? CODE_MAP[code] : null;
+
+                    {days.map(d => {
+                      // ابحث في كل IDs: الأصل والمكررات (لو بياناته محفوظة تحت ID قديم)
+                      const entry = supAllIds.reduce<LogEntry | undefined>(
+                        (found, id) => found ?? logMap.get(`${id}_${d.ds}`),
+                        undefined
+                      );
+                      const meta = entry ? CODE_MAP[entry.code] : null;
+                      const hasNote = !!entry?.notes && entry.notes !== meta?.label;
                       return (
-                        <td
-                          key={d.ds}
-                          className={`p-0.5 text-center transition-all ${
-                            d.weekend ? "bg-stone-50/40" : ""
-                          }`}
-                        >
+                        <td key={d.ds} className={`p-0.5 text-center transition-all ${d.weekend ? "bg-stone-50/40" : ""}`}>
                           <button
-                            disabled={bulkMode}
-                            onClick={() =>
-                              setPicker({
-                                supId: sup._id,
-                                supName: sup.name,
-                                ds: d.ds,
-                                label: `${d.wd} ${d.dayNum} ${AR_MONTHS[d.monthIdx]} ${d.ds.slice(0, 4)}`,
-                              })
-                            }
-                            className={`w-full max-w-[50px] mx-auto h-8 rounded-xl text-[10px] font-extrabold transition-all border ${
-                              bulkMode ? "cursor-default border-transparent" : "hover:scale-[1.05]"
+                            disabled={bulkMode || readOnly}
+                            onClick={readOnly ? undefined : () => {
+                              setPicker({ supId: sup._id, supName: sup.name, ds: d.ds,
+                                label: `${d.wd} ${d.dayNum} ${AR_MONTHS[d.monthIdx]}`,
+                                currentCode: entry?.code, currentNote: entry?.notes });
+                              setPickerNote(entry?.notes ?? "");
+                            }}
+                            title={entry?.notes || meta?.label}
+                            className={`w-full ${cellW} mx-auto rounded-xl text-[9px] font-extrabold transition-all border flex flex-col items-center justify-center gap-0 py-1 px-0.5 ${
+                              bulkMode || readOnly ? "cursor-default border-transparent" : "hover:scale-[1.04] hover:z-10 relative"
                             } ${
                               meta
                                 ? meta.cell
                                 : "text-stone-300 border-dashed border-stone-200 bg-stone-50/10 " +
-                                  (bulkMode ? "" : "hover:bg-gold/10 hover:border-gold/30 hover:text-gold")
+                                  (bulkMode || readOnly ? "" : "hover:bg-gold/10 hover:border-gold/30 hover:text-gold")
                             }`}
+                            style={{ minHeight: mode === "week" ? "50px" : "40px" }}
                           >
-                            {meta ? meta.short : "·"}
+                            {meta ? (
+                              <>
+                                <span className={`w-1.5 h-1.5 rounded-full mb-0.5 ${meta.chip}`} />
+                                <span className="leading-tight font-black">{meta.short}</span>
+                                {hasNote && mode === "week" && (
+                                  <span className="text-[8px] leading-tight opacity-75 max-w-[70px] text-center break-words line-clamp-2 mt-0.5 font-semibold px-0.5">
+                                    {entry!.notes!.length > 22 ? entry!.notes!.slice(0,22) + "…" : entry!.notes}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-[11px]">·</span>
+                            )}
                           </button>
                         </td>
                       );
@@ -476,7 +564,7 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
         </div>
       </div>
 
-      {/* منتقي كود الإدخال الفردي الفاخر */}
+      {/* منتقي الكود (الفردي) */}
       {picker && (
         <div
           className="fixed inset-0 bg-[#2A1418]/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in"
@@ -484,39 +572,53 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
         >
           <div
             className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gold/25"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="relative px-6 py-5 bg-gradient-to-l from-[#5C1523] to-[#4A0F1B] overflow-hidden border-b border-gold/25">
               <div className="pattern-arabesque absolute inset-0 opacity-45" />
-              <button
-                onClick={() => setPicker(null)}
-                className="absolute left-4 top-4.5 text-white/60 hover:text-white transition-colors"
-              >
+              <button onClick={() => setPicker(null)} className="absolute left-4 top-4.5 text-white/60 hover:text-white transition-colors">
                 <X size={18} />
               </button>
               <h3 className="relative font-extrabold text-white text-base">{picker.supName}</h3>
               <p className="relative text-xs text-white/60 mt-1 font-semibold">{picker.label}</p>
+              {picker.currentCode && (
+                <span className={`relative mt-2 inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-lg ${CODE_MAP[picker.currentCode].cell} bg-white/10`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${CODE_MAP[picker.currentCode].chip}`} />
+                  {CODE_MAP[picker.currentCode].label}
+                </span>
+              )}
             </div>
-            
-            <div className="p-5 grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
-              {CODES.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => setCode(c.code)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-extrabold transition-all hover:ring-2 hover:ring-gold/30 hover:shadow-sm ${c.cell}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.chip}`} />
+
+            {/* حقل الملاحظة / اسم المدرسة */}
+            <div className="px-5 pt-4 pb-1">
+              <label className="block text-[10px] font-extrabold text-[#8A7A72] mb-1.5">
+                اسم المدرسة / ملاحظة (اختياري)
+              </label>
+              <input
+                type="text"
+                value={pickerNote}
+                onChange={e => setPickerNote(e.target.value)}
+                placeholder="مثال: مدرسة قطر الابتدائية..."
+                className="w-full bg-[#FDFAF5] border border-gold/30 rounded-xl px-3 py-2 text-xs font-semibold text-[#2A1418] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 placeholder:text-stone-300"
+                dir="rtl"
+              />
+            </div>
+
+            <div className="p-4 grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
+              {CODES.map(c => (
+                <button key={c.code} onClick={() => setCode(c.code)}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-extrabold transition-all hover:ring-2 hover:ring-gold/30 hover:shadow-sm ${c.cell} ${picker.currentCode === c.code ? "ring-2 ring-offset-1 ring-current" : ""}`}
+                  >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${c.chip}`} />
                   {c.label}
                 </button>
               ))}
             </div>
-            
+
             <div className="px-5 pb-5">
-              <button
-                onClick={clearCode}
-                className="btn-ghost w-full justify-center text-red-600 border border-red-200 hover:bg-red-50 hover:text-red-700 font-extrabold text-xs !py-3 rounded-xl transition-all"
-              >
-                <Eraser size={14} className="shrink-0" /> تفريغ هذا اليوم من الأنشطة
+              <button onClick={clearCode}
+                className="btn-ghost w-full justify-center text-red-600 border border-red-200 hover:bg-red-50 hover:text-red-700 font-extrabold text-xs !py-3 rounded-xl transition-all">
+                <Eraser size={14} className="shrink-0" /> تفريغ هذا اليوم
               </button>
             </div>
           </div>
@@ -529,15 +631,54 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
           {toast}
         </div>
       )}
+
+      {/* منتقي الشهر — fixed فوق كل شيء */}
+      {jumpOpen && (
+        <div
+          ref={jumpRef}
+          className="fixed z-[9999] bg-white border border-gold/20 rounded-2xl shadow-2xl p-4 w-72"
+          style={{ top: jumpPos.top, left: jumpPos.left, transform: "translateX(-50%)" }}
+        >
+          <p className="text-[10px] font-extrabold text-stone-400 mb-3 text-center">الانتقال السريع — العام الدراسي 2025-2026</p>
+          {[
+            { label: "2025", yr: 2025, months: [7, 8, 9, 10, 11] },
+            { label: "2026", yr: 2026, months: [0, 1, 2, 3, 4, 5] },
+          ].map(({ label, yr, months }) => (
+            <div key={label} className="mb-3">
+              <p className="text-[9px] font-bold text-stone-400 mb-1.5 text-center">{label}</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {months.map(m => {
+                  const isCurrent = anchor.getFullYear() === yr && anchor.getMonth() === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => { setAnchor(new Date(yr, m, 1)); setJumpOpen(false); }}
+                      className={`py-1.5 rounded-xl text-[11px] font-extrabold transition-all ${isCurrent ? "bg-primary text-white shadow" : "bg-stone-100 text-[#2A1418] hover:bg-gold/20"}`}
+                    >
+                      {AR_MONTHS[m]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={() => { setAnchor(new Date()); setJumpOpen(false); }}
+            className="w-full mt-1 py-1.5 rounded-xl text-[11px] font-extrabold bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+          >
+            اليوم الحالي
+          </button>
+        </div>
+      )}
     </>
   );
 }
 
-/* ───────────────────────── التقرير والملخص السنوي ───────────────────────── */
+/* ───────────────────── التقرير السنوي ───────────────────── */
 function AnnualSummary() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const summaries = useQuery(api.activity.summaries, token ? { academicYear: YEAR, token } : "skip");
   const recomputeAll = useMutation(api.activity.recomputeAllSummaries);
   const [recomputing, setRecomputing] = useState(false);
@@ -549,9 +690,7 @@ function AnnualSummary() {
       const n = await recomputeAll({ academicYear: YEAR, token: token ?? undefined });
       setRecomputeMsg(`✅ تم إعادة حساب ملخص ${n} موجه من السجلات اليومية`);
       setTimeout(() => setRecomputeMsg(null), 4000);
-    } finally {
-      setRecomputing(false);
-    }
+    } finally { setRecomputing(false); }
   }
 
   if (!summaries) {
@@ -562,21 +701,20 @@ function AnnualSummary() {
     );
   }
 
-  const codes = CODES.map((c) => c.code);
+  const visibleCodes = CODES.filter(c => summaries.some(r => ((r as any)[c.code] ?? 0) > 0));
+  const codes = visibleCodes.length > 0 ? visibleCodes.map(c => c.code) : CODES.map(c => c.code);
 
   return (
     <div className="space-y-3 animate-in">
       {isAdmin && (
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between px-1 flex-wrap gap-2">
           <p className="text-xs text-[#8A7A72] font-semibold">
             الأرقام محسوبة من السجلات اليومية — تُحدَّث تلقائياً عند كل إدخال
           </p>
-          <button
-            onClick={handleRecompute}
-            disabled={recomputing}
-            className="btn-primary text-xs py-2 px-4 disabled:opacity-60"
-          >
-            {recomputing ? "جاري إعادة الحساب..." : "⟳ إعادة حساب الكل من السجلات"}
+          <button onClick={handleRecompute} disabled={recomputing}
+            className="btn-primary text-xs py-2 px-4 disabled:opacity-60 flex items-center gap-1.5">
+            <RotateCcw size={13} className={recomputing ? "animate-spin" : ""} />
+            {recomputing ? "جاري إعادة الحساب..." : "إعادة حساب الكل"}
           </button>
         </div>
       )}
@@ -585,94 +723,73 @@ function AnnualSummary() {
           {recomputeMsg}
         </div>
       )}
-    <div className="glass-table-container">
-      {/* مؤشر السكرول */}
-      <div className="flex items-center gap-2 px-5 py-2 border-b border-black/[0.04] bg-white/40 no-print">
-        <span className="text-[10px] font-bold text-[#A89A92]">← مرّر يساراً لرؤية باقي الأعمدة</span>
-        <div className="flex gap-0.5 mr-auto">
-          {codes.map((c) => (
-            <span key={c} className={`w-2 h-2 rounded-full ${CODE_MAP[c].chip}`} title={CODE_MAP[c].label} />
-          ))}
+
+      <div className="glass-table-container">
+        <div className="flex items-center gap-2 px-5 py-2 border-b border-black/[0.04] bg-white/40 no-print">
+          <span className="text-[10px] font-bold text-[#A89A92]">← مرّر يساراً لرؤية باقي الأعمدة</span>
+          <div className="flex gap-0.5 mr-auto">
+            {codes.map(c => <span key={c} className={`w-2 h-2 rounded-full ${CODE_MAP[c]?.chip ?? ""}`} title={CODE_MAP[c]?.label} />)}
+          </div>
         </div>
-      </div>
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="glass-table w-max min-w-full">
-          <thead>
-            <tr>
-              <th
-                className="sticky right-0 z-10 bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] px-3 py-3 text-right text-xs font-extrabold text-[#EBD9B4] w-40 min-w-[140px] border-l border-gold/25"
-                style={{ borderBottom: "2px solid var(--gold)" }}
-              >
-                الموجه التربوي
-              </th>
-              {codes.map((c) => (
-                <th
-                  key={c}
-                  className="px-1 py-0 text-center w-10 min-w-[40px] border-l border-white/10 last:border-l-0 bg-[#3D0D18]"
-                  style={{ borderBottom: `3px solid ${CODE_MAP[c].hdr}` }}
-                >
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="glass-table w-max min-w-full">
+            <thead>
+              <tr>
+                <th className="sticky right-0 z-10 bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] px-3 py-3 text-right text-xs font-extrabold text-[#EBD9B4] w-40 min-w-[140px] border-l border-gold/25"
+                  style={{ borderBottom: "2px solid var(--gold)" }}>
+                  الموجه التربوي
+                </th>
+                {codes.map(c => (
+                  <th key={c} className="px-1 py-0 text-center w-10 min-w-[40px] border-l border-white/10 last:border-l-0 bg-[#3D0D18]"
+                    style={{ borderBottom: `3px solid ${CODE_MAP[c]?.hdr ?? "#888"}` }}>
+                    <div className="flex flex-col items-center justify-center gap-0.5 py-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: CODE_MAP[c]?.hdr }} />
+                      <span className="text-[9px] font-extrabold whitespace-nowrap leading-none" style={{ color: CODE_MAP[c]?.hdr }}>
+                        {CODE_MAP[c]?.short}
+                      </span>
+                    </div>
+                  </th>
+                ))}
+                <th className="px-1 py-0 text-center w-12 min-w-[48px] bg-[#3D0D18]"
+                  style={{ borderBottom: "3px solid #38bdf8" }}>
                   <div className="flex flex-col items-center justify-center gap-0.5 py-2">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: CODE_MAP[c].hdr }}
-                    />
-                    <span
-                      className="text-[9px] font-extrabold whitespace-nowrap leading-none"
-                      style={{ color: CODE_MAP[c].hdr }}
-                    >
-                      {CODE_MAP[c].short}
-                    </span>
+                    <span className="w-2 h-2 rounded-full bg-sky-400" />
+                    <span className="text-[9px] font-extrabold text-sky-400 leading-none">تمدرس</span>
                   </div>
                 </th>
-              ))}
-              <th
-                className="px-1 py-0 text-center w-12 min-w-[48px] bg-[#3D0D18]"
-                style={{ borderBottom: "3px solid #38bdf8" }}
-              >
-                <div className="flex flex-col items-center justify-center gap-0.5 py-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-400" />
-                  <span className="text-[9px] font-extrabold text-sky-400 leading-none">تمدرس</span>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {summaries.map((row, i) => (
-              <tr key={row._id} className={`hover:bg-gold/5 transition-colors border-b border-gold/5 last:border-b-0 ${i % 2 ? "bg-stone-50/20" : ""}`}>
-                <td
-                  className={`font-extrabold text-[#2A1418] text-xs sticky right-0 z-10 px-3 py-2.5 border-l border-gold/15 transition-colors whitespace-nowrap ${
-                    i % 2 ? "bg-[#FAF8F5]" : "bg-white"
-                  }`}
-                >
-                  {row.supervisor?.name ?? "—"}
-                </td>
-
-                {codes.map((c) => {
-                  const val = ((row as Record<string, unknown>)[c] as number) ?? 0;
-                  return (
-                    <td key={c} className="text-center px-1 py-2 border-l border-gold/5 last:border-l-0">
-                      {val > 0 ? (
-                        <span className={`inline-flex items-center justify-center w-7 h-6 rounded-md font-extrabold text-[11px] ${CODE_MAP[c].cell}`}>
-                          {val}
-                        </span>
-                      ) : (
-                        <span className="text-stone-300/60 font-semibold select-none text-xs">·</span>
-                      )}
-                    </td>
-                  );
-                })}
-
-                <td className="text-center px-1 py-2">
-                  <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-sky-50 text-sky-700 font-extrabold text-[11px] border border-sky-200">
-                    {row.schoolingDays}
-                  </span>
-                </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {summaries.map((row, i) => (
+                <tr key={row._id} className={`hover:bg-gold/5 transition-colors border-b border-gold/5 last:border-b-0 ${i%2 ? "bg-stone-50/20" : ""}`}>
+                  <td className={`font-extrabold text-[#2A1418] text-xs sticky right-0 z-10 px-3 py-2.5 border-l border-gold/15 transition-colors whitespace-nowrap ${i%2 ? "bg-[#FAF8F5]" : "bg-white"}`}>
+                    {row.supervisor?.name ?? "—"}
+                  </td>
+                  {codes.map(c => {
+                    const val = ((row as Record<string, unknown>)[c] as number) ?? 0;
+                    return (
+                      <td key={c} className="text-center px-1 py-2 border-l border-gold/5 last:border-l-0">
+                        {val > 0 ? (
+                          <span className={`inline-flex items-center justify-center w-7 h-6 rounded-md font-extrabold text-[11px] ${CODE_MAP[c]?.cell}`}>
+                            {val}
+                          </span>
+                        ) : (
+                          <span className="text-stone-300/60 font-semibold select-none text-xs">·</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="text-center px-1 py-2">
+                    <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-sky-50 text-sky-700 font-extrabold text-[11px] border border-sky-200">
+                      {row.schoolingDays}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUser } from "./permissions";
 
 // الحصول على المعلمين مع خيارات البحث والتصفية الفورية
 export const list = query({
   args: {
+    token: v.optional(v.string()),
     supervisorName: v.optional(v.string()),
     classification: v.optional(v.string()),
     level: v.optional(v.string()),
@@ -11,10 +13,18 @@ export const list = query({
     searchQuery: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const user = args.token ? await getAuthUser(ctx, args.token) : null;
     let teachers = await ctx.db.query("teachers").collect();
 
-    if (args.supervisorName) {
-      teachers = teachers.filter((t) => t.supervisorName === args.supervisorName);
+    // إذا كان موجهاً، نفلتر تلقائياً بمعلميه فقط
+    let effectiveSupervisorName = args.supervisorName;
+    if (user?.role === "supervisor" && user.supervisorId) {
+      const sup = await ctx.db.get(user.supervisorId);
+      if (sup) effectiveSupervisorName = sup.name;
+    }
+
+    if (effectiveSupervisorName) {
+      teachers = teachers.filter((t) => t.supervisorName === effectiveSupervisorName);
     }
     if (args.classification) {
       teachers = teachers.filter((t) => t.classification === args.classification);
@@ -37,6 +47,56 @@ export const list = query({
     }
 
     return teachers;
+  },
+});
+
+// البحث عن معلم/منسق بالاسم وإعادة رقم هاتفه (لزر WhatsApp في الاستمارات)
+export const getPhone = query({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    function normStr(s: string) {
+      return (s ?? "").replace(/\xa0/g, " ").replace(/ـ/g, "")
+        .replace(/[ً-ْٰ]/g, "")
+        .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+        .replace(/\s+/g, " ").trim();
+    }
+    const target = normStr(args.name);
+    const all = await ctx.db.query("teachers").collect();
+    // مطابقة تامة أولاً
+    const exact = all.find((t) => normStr(t.name) === target || normStr(t.nameKey) === target);
+    if (exact) return { name: exact.name, mobile: exact.mobile, email: exact.email, jobTitle: exact.jobTitle };
+    // مطابقة جزئية: أكبر عدد كلمات مشتركة
+    const targetWords = new Set(target.split(" ").filter((w) => w.length > 1));
+    let best: typeof all[0] | null = null;
+    let bestScore = 0;
+    for (const t of all) {
+      const score = normStr(t.name).split(" ").filter((w) => targetWords.has(w)).length;
+      if (score > bestScore) { bestScore = score; best = t; }
+    }
+    if (best && bestScore >= 2) return { name: best.name, mobile: best.mobile, email: best.email, jobTitle: best.jobTitle };
+    return null;
+  },
+});
+
+// جلب معلمي مدرسة معينة بالاسم (للنقر على عدد المعلمين في صفحة المدارس)
+export const bySchoolName = query({
+  args: { schoolName: v.string() },
+  handler: async (ctx, args) => {
+    function normStr(s: string) {
+      return (s ?? "").replace(/\s+/g, " ").trim()
+        .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي")
+        .replace(/ة/g, "ه").replace(/[ً-ْٰ]/g, "");
+    }
+    const target = normStr(args.schoolName);
+    const all = await ctx.db.query("teachers").collect();
+    return all
+      .filter((t) => normStr(t.schoolName) === target)
+      .sort((a, b) => {
+        // المنسقون أولاً ثم المعلمون
+        const ac = (a.jobTitle ?? "").startsWith("منسق") ? 0 : 1;
+        const bc = (b.jobTitle ?? "").startsWith("منسق") ? 0 : 1;
+        return ac - bc || a.name.localeCompare(b.name, "ar");
+      });
   },
 });
 

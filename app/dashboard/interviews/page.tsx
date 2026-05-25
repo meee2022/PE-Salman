@@ -15,7 +15,7 @@ import {
 
 export default function InterviewsPage() {
   const { token, user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const interviews = useQuery(api.interviews.list, token ? { token } : "skip");
 
   const upsertInterview = useMutation(api.interviews.upsert);

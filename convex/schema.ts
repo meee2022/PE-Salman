@@ -122,7 +122,7 @@ export default defineSchema({
       v.literal("OF"), v.literal("VS"), v.literal("CL"), v.literal("LV"),
       v.literal("SL"), v.literal("TR"), v.literal("MT"), v.literal("AC"),
       v.literal("AB"), v.literal("SP"), v.literal("VP"), v.literal("OL"),
-      v.literal("WP")
+      v.literal("WP"), v.literal("HC"), v.literal("CA")
     ),
     schoolId: v.optional(v.id("schools")),  // عند VS/CL
     notes: v.optional(v.string()),
@@ -141,7 +141,7 @@ export default defineSchema({
     OF: v.number(), VS: v.number(), CL: v.number(), LV: v.number(),
     SL: v.number(), TR: v.number(), MT: v.number(), AC: v.number(),
     AB: v.number(), SP: v.number(), VP: v.number(), OL: v.number(),
-    WP: v.number(),
+    WP: v.number(), HC: v.optional(v.number()), CA: v.optional(v.number()),
     schoolingDays: v.number(),
   })
     .index("by_supervisor_year", ["supervisorId", "academicYear"]),
@@ -327,15 +327,356 @@ export default defineSchema({
     domains: v.array(v.object({
       domain: v.string(),               // المجال
       indicator: v.string(),            // مؤشر الأداء
+      recommendations: v.optional(v.array(v.string())), // الملاحظات والتوصيات
       notes: v.optional(v.string()),    // (قديم) الملاحظات
       evidences: v.optional(v.array(v.object({
-        text: v.string(),               // الدليل
-        status: v.string(),             // الإشراف: مستكمل | مستكمل جزئياً | غير مستكمل
+        text: v.string(),               // (قديم) الدليل
+        status: v.string(),             // (قديم) الحالة
       }))),
     })),
     generalNote: v.optional(v.string()),
     supervisorSignature: v.optional(v.string()),   // dataURL
     coordinatorSignature: v.optional(v.string()),  // dataURL
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة الإشراف على أداء المعلم ──────────────────────────────
+  teacherForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    teacherName: v.string(),             // المعلم
+    subject: v.string(),                 // المادة
+    topic: v.optional(v.string()),       // موضوع الدرس
+    grade: v.optional(v.string()),       // الصف
+    day: v.string(),
+    date: v.string(),
+    academicYear: v.string(),
+    followUpType: v.optional(v.string()), // (قديم) نوع المتابعة
+    followUpOptions: v.optional(v.array(v.string())), // خيارات المتابعة المختارة
+    domains: v.array(v.object({
+      domain: v.string(),                // المجال
+      criteria: v.array(v.object({
+        text: v.string(),                // معيار الأداء (البند)
+        rating: v.string(),              // مستوى التقييم
+      })),
+      recommendations: v.array(v.string()), // التوصيات (مختارة أو مكتوبة)
+    })),
+    generalNote: v.optional(v.string()),
+    supervisorSignature: v.optional(v.string()),
+    teacherSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── محضر اجتماع الزيارة التعارفية (ES-ESP-P12-F8) ───────────────
+  meetingForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    coordinatorName: v.optional(v.string()),
+    day: v.string(),
+    date: v.string(),
+    academicYear: v.string(),
+    meetingTypes: v.array(v.string()),     // نوع الاجتماع
+    subject: v.optional(v.string()),       // الموضوع
+    objectives: v.array(v.string()),       // الأهداف
+    summary: v.optional(v.string()),       // الملخص
+    recommendations: v.array(v.string()),  // التوصيات
+    attachments: v.optional(v.string()),
+    attendance: v.array(v.object({ name: v.string() })),
+    supervisorSignature: v.optional(v.string()),
+    coordinatorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── خطة تهيئة وتطوير معلم مستجد (ES-ESP-P12) ────────────────────
+  newTeacherPlans: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    teacherName: v.string(),
+    coordinatorName: v.optional(v.string()),
+    deputyName: v.optional(v.string()),    // النائب الأكاديمي
+    section: v.optional(v.string()),
+    academicYear: v.string(),
+    rows: v.array(v.object({
+      criterion: v.string(),               // المعيار
+      method: v.string(),                  // أسلوب التدريب
+      responsible: v.string(),             // مسؤول التنفيذ
+      timeframe: v.string(),               // الإطار الزمني
+      indicators: v.string(),              // مؤشرات التنفيذ
+      done: v.boolean(),                   // المتابعة: تم
+    })),
+    supervisorSignature: v.optional(v.string()),
+    teacherSignature: v.optional(v.string()),
+    coordinatorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة الاختبار العملي (ES-ESP-P18-F1) ─────────────────────
+  examForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    teacherName: v.string(),             // المنسق/المعلم
+    stage: v.optional(v.string()),       // المرحلة
+    grade: v.optional(v.string()),       // الصف
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),        // الفصل الدراسي
+    academicYear: v.string(),
+    activities: v.array(v.object({
+      context: v.string(),               // السياق التعليمي / الموضوع
+      outcome: v.string(),               // ناتج التعلم
+      tools: v.string(),                 // الأدوات المستخدمة
+      description: v.string(),           // وصف الاختبار (الأنشطة)
+      score: v.string(),                 // توزيع الدرجات
+    })),
+    supervisorNote: v.optional(v.string()), // اعتماد الموجه والملاحظات
+    supervisorSignature: v.optional(v.string()),
+    teacherSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة متابعة تنفيذ الاختبار (ES-ESP-P18-F3) ────────────────
+  examFollowupForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    teacherName: v.string(),
+    stage: v.optional(v.string()),
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),
+    academicYear: v.string(),
+    domains: v.array(v.object({
+      domain: v.string(),                // المجال
+      rating: v.string(),                // مقياس 4 مستويات
+      notes: v.array(v.string()),        // الملاحظات والتوصيات
+    })),
+    supervisorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة تحكيم اختبار تربية بدنية ───────────────────────────────
+  examArbitrationForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    coordinatorName: v.string(),           // المنسق
+    stage: v.optional(v.string()),
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),
+    academicYear: v.string(),
+    domains: v.array(v.object({
+      domain: v.string(),
+      rating: v.string(),
+      notes: v.array(v.string()),
+    })),
+    supervisorSignature: v.optional(v.string()),
+    coordinatorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة متابعة أداء نائب المدير للشؤون الأكاديمية (ES-ESP-P13-F1) ─
+  deputyPrincipalForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    principalName: v.string(),
+    deputyName: v.string(),
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),
+    academicYear: v.string(),
+    followUpTypes: v.array(v.string()),
+    domains: v.array(v.object({
+      domain: v.string(),
+      procedures: v.array(v.string()),
+      notes: v.string(),
+    })),
+    generalNote: v.optional(v.string()),
+    supervisorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة متابعة أداء مدير المدرسة ───────────────────────────────────
+  principalForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    principalName: v.string(),
+    deputyName: v.optional(v.string()),
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),
+    academicYear: v.string(),
+    domains: v.array(v.object({
+      domain: v.string(),
+      score: v.number(),
+      indicators: v.array(v.string()),
+      notes: v.array(v.string()),
+    })),
+    supervisorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارة التطوير المهني (ES-ESA-P11-F4) ──────────────────────
+  profDevForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    coordinatorName: v.optional(v.string()), // المنسق
+    day: v.string(),
+    date: v.string(),
+    term: v.optional(v.string()),
+    academicYear: v.string(),
+    supervisionTypes: v.array(v.string()),   // نوع الإشراف
+    supervisionMethods: v.array(v.string()), // الأسلوب الإشرافي
+    topic: v.optional(v.string()),           // الموضوع
+    summary: v.optional(v.string()),         // الملخص
+    recommendations: v.array(v.string()),    // التوصيات
+    attachments: v.optional(v.string()),     // المرفقات
+    attendance: v.array(v.object({ name: v.string() })), // الحضور
+    supervisorSignature: v.optional(v.string()),
+    coordinatorSignature: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("submitted")),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_supervisor", ["supervisorId"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── خطة الأنشطة اللاصفية ──────────────────────────────────────────
+  activityPlans: defineTable({
+    seq:           v.number(),
+    organizer:     v.string(),          // الجهة المنظمة
+    activityName:  v.string(),          // اسم النشاط
+    partnership:   v.optional(v.string()), // الشراكة
+    dateText:      v.string(),          // التاريخ (نص حر لأن فيه نطاقات)
+    gender:        v.union(v.literal("male"), v.literal("female"), v.literal("both")),
+    stage:         v.union(
+                     v.literal("primary"),
+                     v.literal("middle"),
+                     v.literal("secondary"),
+                     v.literal("all"),
+                     v.literal("model")
+                   ),
+    type:          v.union(v.literal("department"), v.literal("school")),
+    academicYear:  v.string(),
+    notes:         v.optional(v.string()),
+  })
+    .index("by_year",      ["academicYear"])
+    .index("by_year_type", ["academicYear", "type"]),
+
+  // ─── الخطة الإجرائية العامة لقسم التربية البدنية ──────────────────
+  operationalPlans: defineTable({
+    academicYear:   v.string(),
+    domain:         v.string(),   // المجال
+    domainOrder:    v.number(),
+    objective:      v.string(),   // الهدف
+    objectiveOrder: v.number(),
+    action:         v.string(),   // الإجراء
+    endDate:        v.string(),   // تاريخ الانتهاء
+    responsible:    v.string(),   // المنفذ/المسؤول
+    outputs:        v.string(),   // المخرجات المتوقَّعة
+    kpi:            v.string(),   // مؤشر الأداء والقيم المستهدفة
+    order:          v.number(),   // ترتيب عام للصف
+  })
+    .index("by_year", ["academicYear"]),
+
+  // ─── استمارات الرخصة المهنية ──────────────────────────────────────────────
+  profLicenseForms: defineTable({
+    supervisorId: v.id("supervisors"),
+    supervisorName: v.string(),
+    schoolId: v.optional(v.id("schools")),
+    schoolName: v.string(),
+    teacherName: v.string(),                // اسم المعلم / المنسق
+    teacherRole: v.string(),                // "معلم" | "منسق"
+    formVariant: v.string(),                // "3-1" | "5-1" | "1-3"
+    attempt: v.string(),                    // "الأولى" | "الثانية"
+    term: v.string(),                       // "الأول" | "الثاني"
+    date: v.string(),
+    academicYear: v.string(),
+    level: v.string(),                      // "الخبير" | "الكفء" | "المتمرس"
+    evaluator1Name: v.optional(v.string()), // اسم المقيّم الأول (مدير)
+    evaluator2Name: v.optional(v.string()), // اسم المقيّم الثاني (موجه)
+    evaluator3Name: v.optional(v.string()), // اسم المقيّم الثالث (نائب/منسق)
+    // درجات المهام التدريسية
+    teachingScores: v.array(v.object({
+      standard: v.string(),
+      evaluator1: v.array(v.number()),
+      evaluator2: v.array(v.number()),
+      evaluator3: v.array(v.number()),
+    })),
+    // درجات المهام التنسيقية (نموذج 1-3 فقط)
+    coordinationScores: v.optional(v.array(v.object({
+      standard: v.string(),
+      evaluator1: v.array(v.number()),
+      evaluator2: v.array(v.number()),
+    }))),
+    // ملاحظات وتوصيات
+    teachingNotes: v.optional(v.array(v.array(v.string()))),
+    coordinationNotes: v.optional(v.array(v.array(v.string()))),
+    generalNotes: v.optional(v.array(v.string())),
+    supervisorSignature: v.optional(v.string()),
+    teacherSignature: v.optional(v.string()),
     status: v.union(v.literal("draft"), v.literal("submitted")),
     createdBy: v.optional(v.id("users")),
     createdAt: v.number(),

@@ -1,0 +1,47 @@
+{
+  "name": "نظام التوجيه التربوي - التربية البدنية",
+  "short_name": "توجيه التربية البدنية",
+  "description": "نظام إدارة التوجيه التربوي لقسم التربية البدنية - وزارة التربية والتعليم",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#5C1523",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "سجل النشاط",
+      "url": "/dashboard/activity",
+      "description": "سجل النشاط الإشرافي اليومي"
+    },
+    {
+      "name": "استمارة زيارة معلم",
+      "url": "/dashboard/forms/new",
+      "description": "إنشاء استمارة زيارة معلم جديدة"
+    }
+  ]
+}

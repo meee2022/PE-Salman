@@ -165,7 +165,7 @@ async function requireAdmin(ctx: any, token: string): Promise<Doc<"users"> | nul
     .query("users")
     .withIndex("by_token", (q: any) => q.eq("token", token))
     .first();
-  return user && user.role === "admin" && user.isActive ? user : null;
+  return user && (user.role === "admin" || user.role === "superadmin") && user.isActive ? user : null;
 }
 
 export const listUsers = query({
@@ -195,7 +195,7 @@ export const adminResetPassword = mutation({
     if (!admin) throw new Error("غير مصرّح");
     const target = await ctx.db.get(args.userId);
     if (!target) throw new Error("المستخدم غير موجود");
-    const pass = target.role === "admin" ? ADMIN_PASSWORD : DEFAULT_PASSWORD;
+    const pass = (target.role === "admin" || target.role === "superadmin") ? ADMIN_PASSWORD : DEFAULT_PASSWORD;
     const salt = randomToken().slice(0, 16);
     await ctx.db.patch(args.userId, {
       salt,

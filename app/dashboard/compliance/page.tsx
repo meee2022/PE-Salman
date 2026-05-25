@@ -12,7 +12,7 @@ import { useActiveYear } from "@/hooks/useActiveYear";
 export default function CompliancePage() {
   const { user, token } = useAuth();
   const ACADEMIC_YEAR = useActiveYear();
-  const canViewAll = user?.role === "admin" || user?.role === "viewer";
+  const canViewAll = ["admin","superadmin","viewer"].includes(user?.role ?? "");
 
   return (
     <div className="space-y-6">
@@ -128,7 +128,7 @@ function AdminComplianceView() {
       </div>
 
       {/* البحث والفلترة */}
-      <div className="glass-card p-4 space-y-4">
+      <div className="card-luxurious p-4 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* حقل البحث */}
           <div className="relative md:col-span-2">
@@ -158,7 +158,7 @@ function AdminComplianceView() {
       </div>
 
       {/* جدول البيانات */}
-      <div className="glass-card overflow-hidden animate-in">
+      <div className="card-luxurious overflow-hidden animate-in">
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
             <thead>

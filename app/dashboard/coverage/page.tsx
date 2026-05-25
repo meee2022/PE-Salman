@@ -15,7 +15,7 @@ import { useActiveYear } from "@/hooks/useActiveYear";
 export default function CoveragePage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const coverage  = useQuery(api.coverage.listByYear, token ? { academicYear: YEAR, token } : "skip");
   const summaries = useQuery(api.activity.summaries, token ? { academicYear: YEAR, token } : "skip");
   const updateKpi = useMutation(api.coverage.updateKpi);

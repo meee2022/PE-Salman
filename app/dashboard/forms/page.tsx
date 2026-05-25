@@ -20,7 +20,7 @@ export default function FormsPage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
   const router = useRouter();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const forms = useQuery(api.coordinatorForms.list, token ? { academicYear: YEAR, token } : "skip");
   const supOptions = useQuery(api.supervisors.list, token && isAdmin ? { token } : "skip");
   const create = useMutation(api.coordinatorForms.create);
@@ -39,6 +39,12 @@ export default function FormsPage() {
   const schoolOpts = (assigned ?? [])
     .filter((a) => a.school)
     .map((a) => ({ id: a.school!._id as string, name: a.school!.name, sub: a.school!.gender === "male" ? "بنين" : "بنات" }));
+
+  // منسقو المدرسة المختارة
+  const schoolTeachers = useQuery(api.teachers.bySchoolName, hdr.schoolName ? { schoolName: hdr.schoolName } : "skip");
+  const coordinatorOpts = (schoolTeachers ?? [])
+    .filter((t) => (t.jobTitle ?? "").startsWith("منسق"))
+    .map((t) => ({ id: t._id as string, name: t.name, sub: t.jobTitle }));
 
   if (!forms) return <Spinner />;
 
@@ -93,6 +99,7 @@ export default function FormsPage() {
         title="استمارات الإشراف على المنسق"
         subtitle={isAdmin ? `${forms.length} استمارة · ${groups.length} موجه` : "استماراتك الإشرافية الحالية"}
         icon={<ClipboardList size={26} />}
+        back={{ href: "/dashboard/forms-center", label: "مركز الاستمارات" }}
         action={
           <button onClick={() => setShowNew(true)} className="btn-primary shadow-lg shadow-primary/10">
             <Plus size={16} /> استمارة جديدة
@@ -291,13 +298,10 @@ export default function FormsPage() {
               }
             />
 
-            <TxtField
-              label="اسم المنسق المعني"
-              required
-              value={hdr.coordinatorName}
-              onChange={(v) => setHdr({ ...hdr, coordinatorName: v })}
-              placeholder="الاسم الثلاثي للمنسق الرياضي..."
-            />
+            <SearchSelect label="اسم المنسق المعني" required value={hdr.coordinatorName} options={coordinatorOpts} allowCustom
+              onSelect={(name) => setHdr({ ...hdr, coordinatorName: name })}
+              searchPlaceholder="ابحث عن المنسق أو اكتب اسماً جديداً..."
+              placeholder={!hdr.schoolName ? "اختر المدرسة أولاً" : coordinatorOpts.length ? "اختر المنسق من القائمة..." : "اكتب اسم المنسق..."} />
 
             <div className="grid grid-cols-3 gap-3">
               <TxtField

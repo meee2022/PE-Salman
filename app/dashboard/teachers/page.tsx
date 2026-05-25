@@ -9,8 +9,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, TxtField, SelectField, useToast } from "@/components/ui/Modal";
 import {
   Search, Plus, Pencil, Trash2, Users, Download, ArrowUpDown, ChevronDown,
-  LayoutGrid, List, Upload, Phone, Mail, MessageCircle, AlertCircle, Info, FileSpreadsheet, Check, X
+  LayoutGrid, List, Upload, Phone, Mail, MessageCircle, AlertCircle, Info, FileSpreadsheet, Check, X, Printer
 } from "lucide-react";
+import { exportToCSV, printTable, type ExportColumn } from "@/lib/exportUtils";
 
 type TeacherForm = {
   id?: Id<"teachers">;
@@ -71,7 +72,7 @@ const LEVELS = [
 
 export default function TeachersPage() {
   const { token, user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const isSupervisor = user?.role === "supervisor";
   const canManage = isAdmin || isSupervisor; // تم إلغاء القفل للقراءة فقط للموجهين كما طلب المستخدم
 
@@ -89,7 +90,9 @@ export default function TeachersPage() {
     api.teachers.list,
     token
       ? {
-          supervisorName: supervisorFilter !== "all" ? supervisorFilter : undefined,
+          token,
+          // الموجه يرى معلميه فقط تلقائياً (يُحكم من الـ backend)
+          supervisorName: !isSupervisor && supervisorFilter !== "all" ? supervisorFilter : undefined,
           classification: classFilter !== "all" ? classFilter : undefined,
           level: levelFilter !== "all" ? levelFilter : undefined,
           gender: genderFilter !== "all" ? genderFilter : undefined,
@@ -194,58 +197,55 @@ export default function TeachersPage() {
     }
   }
 
-  // تصدير المعلمين الحاليين كـ CSV
+  // أعمدة التصدير (للـ CSV والطباعة)
+  const exportColumns: ExportColumn<Doc<"teachers">>[] = [
+    { header: "#", value: (_t) => "", align: "center" },
+    { header: "اسم المعلم", value: (t) => t.name },
+    { header: "المسمى الوظيفي", value: (t) => t.jobTitle },
+    { header: "التصنيف", value: (t) => t.classification, align: "center" },
+    { header: "المدرسة", value: (t) => t.schoolName },
+    { header: "المرحلة", value: (t) => t.level, align: "center" },
+    { header: "الموجه المسؤول", value: (t) => t.supervisorName },
+    { header: "الجنس", value: (t) => (t.gender === "female" ? "أنثى" : "ذكر"), align: "center" },
+    { header: "الجنسية", value: (t) => t.nationality, align: "center" },
+    { header: "رقم الجوال", value: (t) => t.mobile, align: "center" },
+    { header: "البريد الإلكتروني", value: (t) => t.email },
+    { header: "الرقم الشخصي", value: (t) => t.personalId, align: "center" },
+    { header: "الرقم الوظيفي", value: (t) => t.employeeId, align: "center" },
+  ];
+
+  function filterDesc() {
+    const parts: string[] = [];
+    if (supervisorFilter !== "all") parts.push(`الموجه: ${supervisorFilter}`);
+    if (classFilter !== "all") parts.push(`التصنيف: ${classFilter}`);
+    if (levelFilter !== "all") parts.push(`المرحلة: ${levelFilter}`);
+    if (genderFilter !== "all") parts.push(genderFilter === "male" ? "بنين" : "بنات");
+    if (search) parts.push(`بحث: ${search}`);
+    return parts.length ? parts.join(" · ") : "جميع المعلمين والمنسقين";
+  }
+
+  // تصدير CSV (يحترم الفلاتر الحالية)
   function handleExport() {
     if (!teachers || teachers.length === 0) return;
-    const headers = [
-      "اسم المعلم",
-      "الرقم الشخصي",
-      "الرقم الوظيفي",
-      "المسمى الوظيفي",
-      "التصنيف",
-      "المدرسة",
-      "كود المدرسة",
-      "المرحلة",
-      "الموجه المسؤول",
-      "الجنس",
-      "الجنسية",
-      "رقم الجوال",
-      "البريد الإلكتروني",
-      "تاريخ التعيين",
-    ];
+    exportToCSV("معلمو_التربية_البدنية", exportColumns.filter((c) => c.header !== "#"), teachers);
+  }
 
-    const csvContent =
-      "\uFEFF" +
-      [
-        headers.join(","),
-        ...teachers.map((t) =>
-          [
-            `"${t.name}"`,
-            `"${t.personalId}"`,
-            `"${t.employeeId}"`,
-            `"${t.jobTitle}"`,
-            `"${t.classification}"`,
-            `"${t.schoolName}"`,
-            `"${t.schoolCode}"`,
-            `"${t.level}"`,
-            `"${t.supervisorName}"`,
-            `"${t.gender === "female" ? "أنثى" : "ذكر"}"`,
-            `"${t.nationality}"`,
-            `"${t.mobile}"`,
-            `"${t.email}"`,
-            `"${t.joinDate || ""}"`,
-          ].join(",")
-        ),
-      ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `معلمو_التربية_البدنية_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // طباعة / PDF (يحترم الفلاتر الحالية)
+  function handlePrint() {
+    if (!teachers || teachers.length === 0) return;
+    let i = 0;
+    const cols = exportColumns.map((c) => (c.header === "#" ? { ...c, value: () => String(++i) } : c));
+    printTable({
+      title: "دليل معلمي ومنسقي التربية البدنية",
+      subtitle: filterDesc(),
+      columns: cols,
+      rows: teachers,
+      meta: [
+        { label: "إجمالي السجلات", value: teachers.length },
+        { label: "منسقون", value: teachers.filter((t) => (t.jobTitle ?? "").startsWith("منسق")).length },
+        { label: "معلمون", value: teachers.filter((t) => !(t.jobTitle ?? "").startsWith("منسق")).length },
+      ],
+    });
   }
 
   // معالجة ملف الاستيراد
@@ -396,12 +396,15 @@ export default function TeachersPage() {
     <div className="space-y-6">
       <PageHeader
         title="دليل معلمي التربية البدنية"
-        subtitle="رقمنة وإدارة شاملة لبيانات 929 معلماً ومنسقاً في مدارس دولة قطر والاستغناء التام عن ملفات الإكسيل"
+        subtitle={`رقمنة وإدارة شاملة لبيانات ${teachers?.length ?? "…"} معلماً ومنسقاً في مدارس دولة قطر — المنصة هي المرجع الرسمي`}
         icon={<Users size={26} />}
         action={
           <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-            <button onClick={handleExport} className="btn-secondary flex items-center gap-1.5 text-xs" title="تصدير كـ CSV">
-              <Download size={14} /> تصدير البيانات
+            <button onClick={handlePrint} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-sm transition-all" title="طباعة / حفظ PDF">
+              <Printer size={14} /> طباعة / PDF
+            </button>
+            <button onClick={handleExport} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-sm transition-all" title="تصدير كـ Excel/CSV">
+              <Download size={14} /> تصدير Excel
             </button>
             {canManage && (
               <>
@@ -422,7 +425,7 @@ export default function TeachersPage() {
       />
 
       {/* شريط البحث والفلاتر الفورية */}
-      <div className="glass-card p-4 space-y-4">
+      <div className="card-luxurious p-4 space-y-4">
         <div className="flex items-center justify-between border-b border-gold/10 pb-2 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -471,23 +474,25 @@ export default function TeachersPage() {
             />
           </div>
 
-          {/* فلتر الموجهين */}
-          <div>
-            <select
-              value={supervisorFilter}
-              onChange={(e) => {
-                setSupervisorFilter(e.target.value);
-                setLimit(30);
-              }}
-              className="field w-full text-xs font-bold bg-white"
-            >
-              {supervisorFilterOptions.map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* فلتر الموجهين — مخفي إذا كان المستخدم موجهاً (يرى معلميه تلقائياً) */}
+          {!isSupervisor && (
+            <div>
+              <select
+                value={supervisorFilter}
+                onChange={(e) => {
+                  setSupervisorFilter(e.target.value);
+                  setLimit(30);
+                }}
+                className="field w-full text-xs font-bold bg-white"
+              >
+                {supervisorFilterOptions.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* فلتر التصنيف */}
           <div>
@@ -698,7 +703,7 @@ export default function TeachersPage() {
             </div>
           ) : (
             /* 2. عرض الجدول الشفاف والفاخر (Table View) */
-            <div className="glass-card overflow-hidden animate-in">
+            <div className="card-luxurious overflow-hidden animate-in">
               <div className="overflow-x-auto">
                 <table className="w-full text-right border-collapse">
                   <thead>

@@ -6,6 +6,7 @@ import { Doc } from "./_generated/dataModel";
 const DOMAIN = v.object({
   domain: v.string(),
   indicator: v.string(),
+  recommendations: v.optional(v.array(v.string())),
   notes: v.optional(v.string()),
   evidences: v.optional(v.array(v.object({ text: v.string(), status: v.string() }))),
 });
@@ -45,6 +46,19 @@ export const get = query({
     const form = await ctx.db.get(args.id);
     if (!form || !ownsOrAll(user, form.supervisorId)) return null;
     return form;
+  },
+});
+
+// ── بنك التوصيات المستخدمة سابقاً ─────────────────────────────────
+export const recommendationsBank = query({
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, args.token);
+    if (!user) return [];
+    const rows = await ctx.db.query("coordinatorForms").collect();
+    const set = new Set<string>();
+    for (const f of rows) for (const d of f.domains) for (const r of (d.recommendations ?? [])) { const t = r.trim(); if (t) set.add(t); }
+    return Array.from(set);
   },
 });
 

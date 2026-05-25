@@ -1,0 +1,275 @@
+[
+  {
+    "supervisorName": "فيصل عبدالعزيز البدر",
+    "supervisorKey": "فيصل عبدالعزيز البدر",
+    "scope": "annual",
+    "counts": {
+      "OF": 0,
+      "VS": 82,
+      "CL": 10,
+      "LV": 34,
+      "SL": 4,
+      "TR": 1,
+      "MT": 0,
+      "AC": 12,
+      "AB": 0,
+      "SP": 12,
+      "VP": 10,
+      "OL": 9,
+      "WP": 0
+    },
+    "schoolingDays": 174
+  },
+  {
+    "supervisorName": "أحمد يوسف غريب أبوالفين",
+    "supervisorKey": "احمد يوسف غريب ابوالفين",
+    "scope": "annual",
+    "counts": {
+      "OF": 79,
+      "VS": 89,
+      "CL": 8,
+      "LV": 29,
+      "SL": 7,
+      "TR": 0,
+      "MT": 0,
+      "AC": 12,
+      "AB": 0,
+      "SP": 12,
+      "VP": 14,
+      "OL": 9,
+      "WP": 0
+    },
+    "schoolingDays": 259
+  },
+  {
+    "supervisorName": "علي حمد محمد الكبيسي",
+    "supervisorKey": "علي حمد محمد الكبيسي",
+    "scope": "annual",
+    "counts": {
+      "OF": 110,
+      "VS": 61,
+      "CL": 4,
+      "LV": 45,
+      "SL": 1,
+      "TR": 2,
+      "MT": 0,
+      "AC": 4,
+      "AB": 3,
+      "SP": 12,
+      "VP": 5,
+      "OL": 10,
+      "WP": 2
+    },
+    "schoolingDays": 259
+  },
+  {
+    "supervisorName": "أحمد صالح أحمد الرئيسي",
+    "supervisorKey": "احمد صالح احمد الرئيسي",
+    "scope": "annual",
+    "counts": {
+      "OF": 89,
+      "VS": 88,
+      "CL": 7,
+      "LV": 38,
+      "SL": 0,
+      "TR": 0,
+      "MT": 0,
+      "AC": 12,
+      "AB": 0,
+      "SP": 12,
+      "VP": 4,
+      "OL": 9,
+      "WP": 0
+    },
+    "schoolingDays": 259
+  },
+  {
+    "supervisorName": "مبارك عبدالعزيز ابراهيم المالك",
+    "supervisorKey": "مبارك عبدالعزيز ابراهيم المالك",
+    "scope": "annual",
+    "counts": {
+      "OF": 87,
+      "VS": 73,
+      "CL": 4,
+      "LV": 41,
+      "SL": 3,
+      "TR": 2,
+      "MT": 0,
+      "AC": 20,
+      "AB": 0,
+      "SP": 12,
+      "VP": 3,
+      "OL": 9,
+      "WP": 4
+    },
+    "schoolingDays": 258
+  },
+  {
+    "supervisorName": "جميله الماس سعيد الحمد",
+    "supervisorKey": "جميله الماس سعيد الحمد",
+    "scope": "annual",
+    "counts": {
+      "OF": 82,
+      "VS": 74,
+      "CL": 11,
+      "LV": 12,
+      "SL": 8,
+      "TR": 3,
+      "MT": 0,
+      "AC": 1,
+      "AB": 5,
+      "SP": 11,
+      "VP": 1,
+      "OL": 7,
+      "WP": 0
+    },
+    "schoolingDays": 215
+  },
+  {
+    "supervisorName": "اقبال عبدالله السليمان",
+    "supervisorKey": "اقبال عبدالله السليمان",
+    "scope": "annual",
+    "counts": {
+      "OF": 36,
+      "VS": 50,
+      "CL": 4,
+      "LV": 35,
+      "SL": 18,
+      "TR": 8,
+      "MT": 0,
+      "AC": 0,
+      "AB": 0,
+      "SP": 11,
+      "VP": 0,
+      "OL": 7,
+      "WP": 0
+    },
+    "schoolingDays": 169
+  },
+  {
+    "supervisorName": "حنان خميس حران الشمري",
+    "supervisorKey": "حنان خميس حران الشمري",
+    "scope": "annual",
+    "counts": {
+      "OF": 88,
+      "VS": 62,
+      "CL": 5,
+      "LV": 38,
+      "SL": 10,
+      "TR": 4,
+      "MT": 0,
+      "AC": 4,
+      "AB": 12,
+      "SP": 12,
+      "VP": 10,
+      "OL": 13,
+      "WP": 0
+    },
+    "schoolingDays": 258
+  },
+  {
+    "supervisorName": "عائشة حمد محمد المهندي",
+    "supervisorKey": "عائشه حمد محمد المهندي",
+    "scope": "annual",
+    "counts": {
+      "OF": 82,
+      "VS": 74,
+      "CL": 4,
+      "LV": 52,
+      "SL": 4,
+      "TR": 7,
+      "MT": 0,
+      "AC": 9,
+      "AB": 0,
+      "SP": 12,
+      "VP": 6,
+      "OL": 9,
+      "WP": 0
+    },
+    "schoolingDays": 259
+  },
+  {
+    "supervisorName": "هيام صلاح الغرابات",
+    "supervisorKey": "هيام صلاح الغرابات",
+    "scope": "annual",
+    "counts": {
+      "OF": 88,
+      "VS": 92,
+      "CL": 11,
+      "LV": 29,
+      "SL": 2,
+      "TR": 7,
+      "MT": 0,
+      "AC": 5,
+      "AB": 0,
+      "SP": 12,
+      "VP": 4,
+      "OL": 8,
+      "WP": 0
+    },
+    "schoolingDays": 258
+  },
+  {
+    "supervisorName": "لينا سعيد محمد زوكاري",
+    "supervisorKey": "لينا سعيد محمد زوكاري",
+    "scope": "annual",
+    "counts": {
+      "OF": 97,
+      "VS": 80,
+      "CL": 6,
+      "LV": 28,
+      "SL": 0,
+      "TR": 8,
+      "MT": 0,
+      "AC": 13,
+      "AB": 0,
+      "SP": 12,
+      "VP": 5,
+      "OL": 8,
+      "WP": 1
+    },
+    "schoolingDays": 258
+  },
+  {
+    "supervisorName": "موزة عبدالله على الحرمي",
+    "supervisorKey": "موزه عبدالله علي الحرمي",
+    "scope": "annual",
+    "counts": {
+      "OF": 77,
+      "VS": 73,
+      "CL": 5,
+      "LV": 47,
+      "SL": 5,
+      "TR": 5,
+      "MT": 0,
+      "AC": 16,
+      "AB": 0,
+      "SP": 12,
+      "VP": 10,
+      "OL": 8,
+      "WP": 1
+    },
+    "schoolingDays": 259
+  },
+  {
+    "supervisorName": "فجر محمد صباح الكبيسي",
+    "supervisorKey": "فجر محمد صباح الكبيسي",
+    "scope": "annual",
+    "counts": {
+      "OF": 61,
+      "VS": 39,
+      "CL": 7,
+      "LV": 25,
+      "SL": 15,
+      "TR": 28,
+      "MT": 0,
+      "AC": 1,
+      "AB": 0,
+      "SP": 11,
+      "VP": 4,
+      "OL": 5,
+      "WP": 0
+    },
+    "schoolingDays": 196
+  }
+]

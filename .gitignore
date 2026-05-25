@@ -9,7 +9,7 @@ out/
 build/
 
 # Convex generated (auto-generated at build time)
-convex/_generated/
+
 
 # Environment variables — لا ترفع بيانات حساسة
 .env
@@ -35,7 +35,7 @@ next-env.d.ts
 Thumbs.db
 
 # Local data / import files (كبيرة أو حساسة)
-data/
+
 import-engine/
 analysis_output.txt
 analyze.py

@@ -6,7 +6,10 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useAuth } from "@/components/AuthProvider";
-import { Settings, KeyRound, Users, ShieldCheck, RefreshCw, Check, UserPlus, X, History, FileText, Database, CalendarCog } from "lucide-react";
+import {
+  Settings, KeyRound, Users, ShieldCheck, RefreshCw, Check,
+  UserPlus, X, History, FileText, CalendarCog, Database, UserCircle,
+} from "lucide-react";
 import Link from "next/link";
 
 const ROLES = [
@@ -17,64 +20,117 @@ const ROLES = [
 ] as const;
 type RoleValue = (typeof ROLES)[number]["value"];
 
+// ── تعريف التبويبات ──────────────────────────────────────────────
+type TabId = "account" | "year" | "reports" | "users" | "audit" | "import";
+
+interface TabDef {
+  id: TabId;
+  label: string;
+  icon: React.ReactNode;
+  adminOnly: boolean;
+}
+
+const TABS: TabDef[] = [
+  { id: "account", label: "حسابي",           icon: <UserCircle size={16} />,  adminOnly: false },
+  { id: "year",    label: "السنة الدراسية",   icon: <CalendarCog size={16} />, adminOnly: true  },
+  { id: "reports", label: "التقارير المطبوعة",icon: <FileText size={16} />,    adminOnly: true  },
+  { id: "users",   label: "المستخدمون",       icon: <Users size={16} />,       adminOnly: true  },
+  { id: "audit",   label: "سجل العمليات",     icon: <History size={16} />,     adminOnly: true  },
+  { id: "import",  label: "استيراد البيانات", icon: <Database size={16} />,    adminOnly: true  },
+];
+
+// ── الصفحة الرئيسية ──────────────────────────────────────────────
 export default function SettingsPage() {
   const { user, token } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabId>("account");
   const [toast, setToast] = useState<string | null>(null);
   const show = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3500); };
 
   if (!user || !token) return null;
 
-  return (
-    <>
-      <PageHeader title="الإعدادات" subtitle="إدارة الحساب والصلاحيات وتخصيص التقارير" icon={<Settings size={26} />} />
+  const isAdmin = ["admin", "superadmin"].includes(user.role);
+  const visibleTabs = TABS.filter(t => !t.adminOnly || isAdmin);
 
+  return (
+    <div className="space-y-6 animate-in">
+      <PageHeader
+        title="الإعدادات"
+        subtitle="إدارة الحساب والصلاحيات والتقارير"
+        icon={<Settings size={24} />}
+      />
+
+      {/* ── تحذير تغيير كلمة المرور ─────────────────────────────── */}
       {user.mustChangePassword && (
-        <div className="card-luxurious p-4.5 bg-amber-500/[0.03] border-amber-500/20 flex items-center gap-3.5 animate-in mb-6">
-          <span className="icon-orb !w-9 !h-9 bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm shrink-0">
-            <ShieldCheck size={18} className="text-amber-600 animate-pulse" />
+        <div className="card-luxurious p-4 bg-amber-500/[0.03] border-amber-500/20 flex items-center gap-3.5">
+          <span className="icon-orb !w-9 !h-9 bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
+            <ShieldCheck size={18} className="animate-pulse" />
           </span>
-          <div className="space-y-0.5">
+          <div>
             <p className="text-sm font-bold text-amber-800">حماية الحساب مطلوبة</p>
-            <p className="text-xs font-semibold text-amber-700/80">يُنصح بشدة بتغيير كلمة المرور الافتراضية الآن لتأمين لوحة التحكم الخاصة بك.</p>
+            <p className="text-xs font-semibold text-amber-700/80">يُنصح بتغيير كلمة المرور الافتراضية الآن.</p>
           </div>
+          <button onClick={() => setActiveTab("account")}
+            className="mr-auto text-xs font-bold text-amber-700 underline whitespace-nowrap">
+            تغيير الآن
+          </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <ChangePasswordCard token={token} onDone={show} />
-        <AccountCard />
+      {/* ── شريط التبويبات ──────────────────────────────────────── */}
+      <div className="flex gap-1 flex-wrap bg-white/60 border border-black/[0.06] rounded-2xl p-1.5 shadow-sm">
+        {visibleTabs.map(tab => {
+          const isLink = tab.id === "import";
+          const active = activeTab === tab.id;
+
+          if (isLink) {
+            return (
+              <Link key={tab.id} href="/dashboard/settings/import"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 text-[#6b5a52] hover:bg-black/[0.04] hover:text-primary whitespace-nowrap">
+                <span className="opacity-70">{tab.icon}</span>
+                {tab.label}
+              </Link>
+            );
+          }
+
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 whitespace-nowrap
+                ${active
+                  ? "bg-gradient-to-l from-primary to-[#7A1E30] text-white shadow-md"
+                  : "text-[#6b5a52] hover:bg-black/[0.04] hover:text-primary"
+                }`}>
+              <span className={active ? "text-gold" : "opacity-70"}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {user.role === "admin" && <ActiveYearCard token={token} onToast={show} />}
-      {user.role === "admin" && <OrgSettings token={token} onToast={show} />}
-
-      {user.role === "admin" && <UsersAdmin token={token} onToast={show} currentUserId={user._id} />}
-
-      {user.role === "admin" && <AuditLog token={token} />}
-
-      {user.role === "admin" && (
-        <div className="card-luxurious p-5 bg-white/70 backdrop-blur-md flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="icon-orb !w-10 !h-10 bg-primary/5 text-primary"><Database size={18} /></span>
-            <div>
-              <p className="font-black text-[#1C1008] text-sm">استيراد السجلات اليومية</p>
-              <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">3,181 سجل من ملف الاحصاءات 2025 — 13 موجه — العام 2025-2026</p>
-            </div>
+      {/* ── محتوى التبويب ───────────────────────────────────────── */}
+      <div className="animate-in">
+        {activeTab === "account" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChangePasswordCard token={token} onDone={show} />
+            <AccountCard />
           </div>
-          <Link href="/dashboard/settings/import" className="btn-primary text-sm whitespace-nowrap">
-            فتح أداة الاستيراد
-          </Link>
-        </div>
-      )}
+        )}
+        {activeTab === "year"    && isAdmin && <ActiveYearCard token={token} onToast={show} />}
+        {activeTab === "reports" && isAdmin && <OrgSettings token={token} onToast={show} />}
+        {activeTab === "users"   && isAdmin && <UsersAdmin token={token} onToast={show} currentUserId={user._id} />}
+        {activeTab === "audit"   && isAdmin && <AuditLog token={token} />}
+      </div>
 
+      {/* ── Toast ────────────────────────────────────────────────── */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold px-6 py-3.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 animate-in border border-emerald-500/30">
-          <Check size={16} className="text-white" /> {toast}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold px-6 py-3.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 border border-emerald-500/30">
+          <Check size={16} /> {toast}
         </div>
       )}
-    </>
+    </div>
   );
 }
+
+// ══════════════════ مكونات التبويبات ══════════════════════════════
 
 function AccountCard() {
   const { user } = useAuth();
@@ -84,11 +140,11 @@ function AccountCard() {
     user.role === "admin"      ? "رئيس التوجيه (مدير)" :
     user.role === "supervisor" ? "موجه" : "مستخدم";
   return (
-    <div className="card-luxurious p-6 animate-in space-y-5 relative overflow-hidden group">
+    <div className="card-luxurious p-6 space-y-5 relative overflow-hidden">
       <span className="absolute right-0 top-0 bottom-0 w-1 bg-gold" />
-      <div className="flex items-center gap-4.5 border-b border-gold/15 pb-4">
+      <div className="flex items-center gap-4 border-b border-gold/15 pb-4">
         <span className="icon-orb !w-12 !h-12 bg-gradient-to-br from-[#DFC48E] to-[#A8853A] text-white shadow-md shadow-gold/20 font-extrabold text-base">
-          {user.name ? user.name.trim().charAt(0) : "U"}
+          {user.name?.trim().charAt(0) ?? "U"}
         </span>
         <div>
           <h2 className="font-extrabold text-[#2A1418] text-lg">معلومات الحساب</h2>
@@ -134,21 +190,21 @@ function ChangePasswordCard({ token, onDone }: { token: string; onDone: (m: stri
   }
 
   return (
-    <form onSubmit={submit} className="card-luxurious p-6 animate-in space-y-4 relative overflow-hidden group">
+    <form onSubmit={submit} className="card-luxurious p-6 space-y-4 relative overflow-hidden">
       <span className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-[#7A1E30]" />
       <div className="flex items-center gap-3 border-b border-gold/15 pb-4">
         <span className="icon-orb !w-9 !h-9 bg-[#5C1523]/5 text-[#5C1523] border border-gold/30">
-          <KeyRound size={16} className="text-[#5C1523]" />
+          <KeyRound size={16} />
         </span>
         <h2 className="font-extrabold text-[#2A1418] text-lg">تغيير كلمة المرور</h2>
       </div>
-      {err && <div className="bg-red-500/5 text-red-700 text-xs font-bold rounded-xl px-4 py-2.5 border border-red-500/10 animate-shake">{err}</div>}
+      {err && <div className="bg-red-500/5 text-red-700 text-xs font-bold rounded-xl px-4 py-2.5 border border-red-500/10">{err}</div>}
       <div className="space-y-3">
-        <input type="password" value={oldP} onChange={(e) => setOldP(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="كلمة المرور الحالية" dir="ltr" />
-        <input type="password" value={newP} onChange={(e) => setNewP(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="كلمة المرور الجديدة" dir="ltr" />
-        <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="تأكيد كلمة المرور الجديدة" dir="ltr" />
+        <input type="password" value={oldP} onChange={e => setOldP(e.target.value)} className="field font-semibold" placeholder="كلمة المرور الحالية" dir="ltr" />
+        <input type="password" value={newP} onChange={e => setNewP(e.target.value)} className="field font-semibold" placeholder="كلمة المرور الجديدة" dir="ltr" />
+        <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className="field font-semibold" placeholder="تأكيد كلمة المرور" dir="ltr" />
       </div>
-      <button type="submit" disabled={busy || !oldP || !newP} className="btn-primary w-full justify-center text-xs font-bold !py-3 rounded-xl hover:scale-101 transition-all duration-200">
+      <button type="submit" disabled={busy || !oldP || !newP} className="btn-primary w-full justify-center text-xs font-bold !py-3">
         {busy ? "جارٍ الحفظ..." : "تحديث كلمة المرور"}
       </button>
     </form>
@@ -161,7 +217,6 @@ function ActiveYearCard({ token, onToast }: { token: string; onToast: (m: string
   const [year, setYear] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // أنشئ قائمة سنوات من 2023-2024 حتى 2030-2031
   const yearOptions: string[] = [];
   for (let y = 2023; y <= 2030; y++) yearOptions.push(`${y}-${y + 1}`);
 
@@ -172,13 +227,12 @@ function ActiveYearCard({ token, onToast }: { token: string; onToast: (m: string
       await setActiveYear({ year, token });
       onToast(`✅ تم تغيير السنة الدراسية النشطة إلى ${year}`);
       setYear("");
-    } catch (e: any) {
-      onToast(`❌ ${e.message}`);
-    } finally { setSaving(false); }
+    } catch (e: any) { onToast(`❌ ${e.message}`); }
+    finally { setSaving(false); }
   }
 
   return (
-    <div className="card-luxurious p-6 animate-in space-y-4 relative overflow-hidden group mt-6">
+    <div className="card-luxurious p-6 space-y-5 relative overflow-hidden max-w-xl">
       <span className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-sky-500 to-blue-600" />
       <div className="flex items-center gap-3 border-b border-gold/15 pb-4">
         <span className="icon-orb !w-9 !h-9 bg-gradient-to-br from-sky-500 to-blue-600 text-white border border-sky-400/30 shadow-md shadow-sky-500/20">
@@ -187,36 +241,29 @@ function ActiveYearCard({ token, onToast }: { token: string; onToast: (m: string
         <div>
           <h2 className="font-extrabold text-[#2A1418] text-lg">السنة الدراسية النشطة</h2>
           <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">
-            السنة الحالية: <span className="font-black text-primary" dir="ltr">{currentYear ?? "..."}</span> — تؤثر على كل صفحات النظام
+            السنة الحالية: <span className="font-black text-primary" dir="ltr">{currentYear ?? "..."}</span>
           </p>
         </div>
       </div>
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <label className="block text-xs font-bold text-[#2A1418] mb-1.5">اختر السنة الجديدة</label>
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="field font-semibold focus:ring-sky-500/30 focus:border-sky-500/50 bg-white"
-          >
+          <select value={year} onChange={e => setYear(e.target.value)} className="field bg-white font-semibold">
             <option value="">— اختر السنة —</option>
-            {yearOptions.map((y) => (
+            {yearOptions.map(y => (
               <option key={y} value={y} disabled={y === currentYear}>
                 {y} {y === currentYear ? "(النشطة حالياً)" : ""}
               </option>
             ))}
           </select>
         </div>
-        <button
-          onClick={save}
-          disabled={saving || !year || year === currentYear}
-          className="btn-primary !py-2.5 !px-6 rounded-xl text-xs font-bold whitespace-nowrap disabled:opacity-40"
-        >
+        <button onClick={save} disabled={saving || !year || year === currentYear}
+          className="btn-primary !py-2.5 !px-6 text-xs font-bold whitespace-nowrap disabled:opacity-40">
           {saving ? "جارٍ الحفظ..." : "تطبيق السنة"}
         </button>
       </div>
       <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200/60 rounded-xl px-4 py-2.5 font-semibold">
-        ⚠️ بعد التغيير ستنعكس السنة الجديدة فوراً على جميع صفحات النظام (الموجهين، التغطية، النشاط، الاستمارات...)
+        ⚠️ بعد التغيير ستنعكس السنة الجديدة فوراً على جميع صفحات النظام.
       </p>
     </div>
   );
@@ -230,24 +277,30 @@ function OrgSettings({ token, onToast }: { token: string; onToast: (m: string) =
 
   const data = form ?? (org ? {
     ministry: org["org.ministry"] ?? "", department: org["org.department"] ?? "",
-    section: org["org.section"] ?? "", headName: org["org.headName"] ?? "", managerName: org["org.managerName"] ?? "",
+    section: org["org.section"] ?? "", headName: org["org.headName"] ?? "",
+    managerName: org["org.managerName"] ?? "",
   } : null);
 
-  if (!data) return null;
+  if (!data) return (
+    <div className="py-12 flex justify-center">
+      <div className="w-8 h-8 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
+    </div>
+  );
+
   const set = (k: string, v: string) => setForm({ ...data, [k]: v });
 
   async function save() {
     if (!data) return;
     setSaving(true);
     try {
-      await setOrg({ ministry: data.ministry, department: data.department, section: data.section,
-        headName: data.headName, managerName: data.managerName, token });
+      await setOrg({ ministry: data.ministry, department: data.department,
+        section: data.section, headName: data.headName, managerName: data.managerName, token });
       onToast("تم حفظ بيانات التقارير");
     } finally { setSaving(false); }
   }
 
   return (
-    <div className="card-luxurious p-6 animate-in space-y-4 relative overflow-hidden group mt-6">
+    <div className="card-luxurious p-6 space-y-5 relative overflow-hidden max-w-2xl">
       <span className="absolute right-0 top-0 bottom-0 w-1 bg-gold" />
       <div className="flex items-center gap-3 border-b border-gold/15 pb-4">
         <span className="icon-orb !w-9 !h-9 bg-gradient-to-br from-[#5C1523] to-[#4A0F1B] text-gold border border-gold/25 shadow-md shadow-primary/10">
@@ -255,25 +308,23 @@ function OrgSettings({ token, onToast }: { token: string; onToast: (m: string) =
         </span>
         <div>
           <h2 className="font-extrabold text-[#2A1418] text-lg">بيانات التقارير المطبوعة</h2>
-          <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">تظهر هذه البيانات في ترويسة وتذييل ملفات PDF عند الطباعة الرسمية.</p>
+          <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">تظهر في ترويسة وتذييل ملفات PDF الرسمية.</p>
         </div>
       </div>
       <div className="space-y-4">
-        <Field label="الوزارة / الجهة" value={data.ministry} onChange={(v) => set("ministry", v)} />
+        <Field label="الوزارة / الجهة" value={data.ministry} onChange={v => set("ministry", v)} />
         <div className="grid grid-cols-2 gap-4">
-          <Field label="الإدارة" value={data.department} onChange={(v) => set("department", v)} />
-          <Field label="القسم" value={data.section} onChange={(v) => set("section", v)} />
+          <Field label="الإدارة" value={data.department} onChange={v => set("department", v)} />
+          <Field label="القسم" value={data.section} onChange={v => set("section", v)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="اسم رئيس القسم (للتوقيع)" value={data.headName} onChange={(v) => set("headName", v)} />
-          <Field label="اسم مدير الإدارة (للتوقيع)" value={data.managerName} onChange={(v) => set("managerName", v)} />
+          <Field label="اسم رئيس القسم (للتوقيع)" value={data.headName} onChange={v => set("headName", v)} />
+          <Field label="اسم مدير الإدارة (للتوقيع)" value={data.managerName} onChange={v => set("managerName", v)} />
         </div>
       </div>
-      <div className="pt-2">
-        <button onClick={save} disabled={saving} className="btn-primary !py-2.5 !px-6 rounded-xl text-xs font-bold transition-all duration-200">
-          {saving ? "جارٍ الحفظ..." : "حفظ بيانات التقارير"}
-        </button>
-      </div>
+      <button onClick={save} disabled={saving} className="btn-primary !py-2.5 !px-6 text-xs font-bold">
+        {saving ? "جارٍ الحفظ..." : "حفظ بيانات التقارير"}
+      </button>
     </div>
   );
 }
@@ -282,45 +333,50 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   return (
     <div>
       <label className="block text-xs font-bold text-[#2A1418] mb-1.5">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" />
+      <input value={value} onChange={e => onChange(e.target.value)} className="field font-semibold" />
     </div>
   );
 }
 
 function AuditLog({ token }: { token: string }) {
-  const logs = useQuery(api.audit.list, { token, limit: 40 });
+  const logs = useQuery(api.audit.list, { token, limit: 60 });
   const actionLabel: Record<string, string> = { create: "إضافة", update: "تعديل", delete: "حذف" };
   const actionCls: Record<string, string> = {
-    create: "bg-emerald-50 text-emerald-700 border border-emerald-200/50", 
-    update: "bg-sky-50 text-sky-700 border border-sky-200/50", 
+    create: "bg-emerald-50 text-emerald-700 border border-emerald-200/50",
+    update: "bg-sky-50 text-sky-700 border border-sky-200/50",
     delete: "bg-red-50 text-red-700 border border-red-200/50",
   };
+
   return (
-    <div className="card-luxurious overflow-hidden animate-in mt-6">
-      <div className="px-6 py-4.5 border-b border-gold/15 bg-[#FCF9F2]/30 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="icon-orb !w-10 !h-10 bg-gradient-to-br from-primary to-[#7A1E30] text-gold border border-gold/25 shadow-md shadow-primary/10">
-            <History size={18} />
-          </span>
-          <div>
-            <h2 className="font-extrabold text-[#2A1418] text-lg">سجل العمليات والرقابة</h2>
-            <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">تتبع التعديلات والعمليات الأخيرة على نظام سلمان الرياضي.</p>
-          </div>
+    <div className="card-luxurious overflow-hidden">
+      <div className="px-6 py-4 border-b border-gold/15 bg-[#FCF9F2]/30 flex items-center gap-3">
+        <span className="icon-orb !w-10 !h-10 bg-gradient-to-br from-primary to-[#7A1E30] text-gold border border-gold/25 shadow-md shadow-primary/10">
+          <History size={18} />
+        </span>
+        <div>
+          <h2 className="font-extrabold text-[#2A1418] text-lg">سجل العمليات والرقابة</h2>
+          <p className="text-xs text-[#8A7A72] font-semibold mt-0.5">تتبع التعديلات الأخيرة على النظام.</p>
         </div>
       </div>
       {logs === undefined ? (
-        <div className="py-12 flex justify-center"><div className="w-8 h-8 rounded-full border-4 border-gold/30 border-t-gold animate-spin" /></div>
-      ) : !logs || logs.length === 0 ? (
+        <div className="py-12 flex justify-center">
+          <div className="w-8 h-8 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
+        </div>
+      ) : !logs?.length ? (
         <div className="py-12 text-center text-[#A89A92] text-sm font-semibold">لا توجد تعديلات مسجّلة بعد.</div>
       ) : (
-        <div className="divide-y divide-gold/10 max-h-96 overflow-y-auto bg-white/40">
-          {logs.map((l) => (
-            <div key={l._id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-gold/5 transition-colors duration-150">
-              <span className={`pill px-3 py-1 text-[11px] font-bold ${actionCls[l.action] ?? "bg-gray-100 text-gray-600"}`}>{actionLabel[l.action] ?? l.action}</span>
+        <div className="divide-y divide-gold/10 bg-white/40">
+          {logs.map(l => (
+            <div key={l._id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-gold/5 transition-colors">
+              <span className={`pill px-3 py-1 text-[11px] font-bold ${actionCls[l.action] ?? "bg-gray-100 text-gray-600"}`}>
+                {actionLabel[l.action] ?? l.action}
+              </span>
               <p className="flex-1 text-xs text-[#2A1418] font-bold min-w-0 leading-relaxed">{l.summary}</p>
               <div className="text-left shrink-0">
                 <p className="text-xs font-bold text-gold-dark">{l.userName ?? "—"}</p>
-                <p className="text-[10px] text-[#A89A92] font-bold mt-0.5" dir="ltr">{new Date(l.timestamp).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" })}</p>
+                <p className="text-[10px] text-[#A89A92] font-bold mt-0.5" dir="ltr">
+                  {new Date(l.timestamp).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" })}
+                </p>
               </div>
             </div>
           ))}
@@ -351,31 +407,34 @@ function CreateUserModal({ token, onClose, onDone }: { token: string; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 bg-[#2A1418]/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in" onClick={onClose}>
-      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gold/20">
+    <div className="fixed inset-0 bg-[#2A1418]/60 backdrop-blur-md flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <form onClick={e => e.stopPropagation()} onSubmit={submit}
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gold/20">
         <div className="relative px-6 py-5 bg-gradient-to-l from-[#5C1523] to-[#4A0F1B] overflow-hidden border-b border-gold/25">
           <div className="pattern-arabesque absolute inset-0 opacity-40" />
-          <button type="button" onClick={onClose} className="absolute left-4 top-4.5 text-white/70 hover:text-white transition-colors duration-150"><X size={18} /></button>
-          <h3 className="relative font-extrabold text-white flex items-center gap-2 text-base"><UserPlus size={18} className="text-gold" /> إضافة مستخدم جديد</h3>
+          <button type="button" onClick={onClose} className="absolute left-4 top-4.5 text-white/70 hover:text-white"><X size={18} /></button>
+          <h3 className="relative font-extrabold text-white flex items-center gap-2 text-base">
+            <UserPlus size={18} className="text-gold" /> إضافة مستخدم جديد
+          </h3>
         </div>
         <div className="p-6 space-y-4">
           {err && <div className="bg-red-500/5 text-red-700 text-xs font-bold rounded-xl px-4 py-2.5 border border-red-500/10">{err}</div>}
           <div>
             <label className="block text-xs font-bold text-[#2A1418] mb-1.5">الاسم الكامل</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="الاسم ثلاثي أو رباعي" />
+            <input value={name} onChange={e => setName(e.target.value)} className="field font-semibold" placeholder="الاسم ثلاثي أو رباعي" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-[#2A1418] mb-1.5">اسم المستخدم (للدخول)</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="username أو بريد إلكتروني" dir="ltr" />
+            <label className="block text-xs font-bold text-[#2A1418] mb-1.5">اسم المستخدم</label>
+            <input value={username} onChange={e => setUsername(e.target.value)} className="field font-semibold" placeholder="username" dir="ltr" />
           </div>
           <div>
             <label className="block text-xs font-bold text-[#2A1418] mb-1.5">كلمة المرور المؤقتة</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50" placeholder="٦ أحرف على الأقل" dir="ltr" />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="field font-semibold" placeholder="٦ أحرف على الأقل" dir="ltr" />
           </div>
           <div>
             <label className="block text-xs font-bold text-[#2A1418] mb-1.5">الدور والصلاحية</label>
-            <select value={role} onChange={(e) => setRole(e.target.value as RoleValue)} className="field font-semibold focus:ring-primary/30 focus:border-primary/50 bg-white">
-              {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            <select value={role} onChange={e => setRole(e.target.value as RoleValue)} className="field bg-white font-semibold">
+              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </div>
         </div>
@@ -406,12 +465,12 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
   }
   async function handleReset(userId: Id<"users">) {
     const r = await resetPassword({ token, userId });
-    onToast(`تمت إعادة التعيين — كلمة المرور الافتراضية: ${r.defaultPassword}`);
+    onToast(`تمت إعادة التعيين — كلمة المرور: ${r.defaultPassword}`);
   }
 
   return (
-    <div className="card-luxurious overflow-hidden animate-in mt-6">
-      <div className="px-6 py-4.5 flex items-center justify-between border-b border-gold/15 flex-wrap gap-3 bg-[#FCF9F2]/30">
+    <div className="card-luxurious overflow-hidden">
+      <div className="px-6 py-4 flex items-center justify-between border-b border-gold/15 flex-wrap gap-3 bg-[#FCF9F2]/30">
         <div className="flex items-center gap-3">
           <span className="icon-orb !w-10 !h-10 bg-gradient-to-br from-primary to-[#7A1E30] text-gold border border-gold/25 shadow-md shadow-primary/10">
             <Users size={18} />
@@ -419,21 +478,26 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
           <h2 className="font-extrabold text-[#2A1418] text-lg">إدارة مستخدمي النظام</h2>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2 !py-2.5 !px-5 rounded-xl hover:scale-102 duration-200">
-            <UserPlus size={16} /> إضافة مستخدم جديد
+          <button onClick={() => setShowCreate(true)}
+            className="btn-primary flex items-center gap-2 !py-2 !px-4 text-xs">
+            <UserPlus size={15} /> إضافة مستخدم
           </button>
-          <button onClick={handleSeed} disabled={busy} className="btn-ghost flex items-center gap-2 !py-2.5 !px-5 rounded-xl hover:bg-gold/5 hover:border-gold/30 duration-200">
-            <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
-            <span>{busy ? "جارٍ الإنشاء..." : "مزامنة الموجهين"}</span>
+          <button onClick={handleSeed} disabled={busy}
+            className="btn-ghost flex items-center gap-2 !py-2 !px-4 text-xs">
+            <RefreshCw size={13} className={busy ? "animate-spin" : ""} />
+            {busy ? "جارٍ..." : "مزامنة الموجهين"}
           </button>
         </div>
       </div>
 
       {showCreate && <CreateUserModal token={token} onClose={() => setShowCreate(false)} onDone={onToast} />}
+
       {users === undefined ? (
-        <div className="py-12 flex justify-center"><div className="w-8 h-8 rounded-full border-4 border-gold/30 border-t-gold animate-spin" /></div>
+        <div className="py-12 flex justify-center">
+          <div className="w-8 h-8 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
+        </div>
       ) : !users ? (
-        <div className="py-12 text-center text-[#A89A92] text-sm font-semibold">غير مصرّح بالوصول لهذه الصفحة.</div>
+        <div className="py-12 text-center text-[#A89A92] text-sm font-semibold">غير مصرّح بالوصول.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="glass-table">
@@ -441,19 +505,19 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
               <tr>
                 <th className="text-right">الاسم</th>
                 <th className="text-right">اسم المستخدم</th>
-                <th className="text-center">الدور والصلاحية</th>
-                <th className="text-center">حالة الحساب</th>
-                <th className="text-center">الإجراءات والعمليات</th>
+                <th className="text-center">الدور</th>
+                <th className="text-center">الحالة</th>
+                <th className="text-center">الإجراءات</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {users.map(u => (
                 <tr key={u._id} className="group">
                   <td className="font-extrabold text-[#2A1418] flex items-center gap-2.5">
-                    <span className="icon-orb !w-8 !h-8 bg-gradient-to-br from-[#FCF9F2] to-[#DFC48E]/20 text-[#5C1523] border border-gold/30 font-extrabold text-xs shadow-inner">
-                      {u.name ? u.name.trim().charAt(0) : "U"}
+                    <span className="icon-orb !w-8 !h-8 bg-gradient-to-br from-[#FCF9F2] to-[#DFC48E]/20 text-[#5C1523] border border-gold/30 font-extrabold text-xs">
+                      {u.name?.trim().charAt(0) ?? "U"}
                     </span>
-                    <span>{u.name}</span>
+                    {u.name}
                   </td>
                   <td className="text-[#6b5a52] font-semibold text-xs" dir="ltr">{u.username}</td>
                   <td className="text-center">
@@ -465,9 +529,9 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
                       <span className="pill bg-amber-50 text-amber-700 border border-amber-300/50 font-bold">⭐ سوبر أدمن</span>
                     ) : (
                       <select value={u.role}
-                        onChange={(e) => setRole({ token, userId: u._id, role: e.target.value as RoleValue })}
-                        className="field !w-auto !py-1.5 !px-2.5 text-xs font-bold bg-[#FCF9F2]/50 border-gold/25 focus:ring-primary/20">
-                        {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                        onChange={e => setRole({ token, userId: u._id, role: e.target.value as RoleValue })}
+                        className="field !w-auto !py-1.5 !px-2.5 text-xs font-bold bg-[#FCF9F2]/50 border-gold/25">
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     )}
                   </td>
@@ -478,15 +542,15 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
                   </td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => handleReset(u._id)} title="إعادة تعيين كلمة المرور"
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-gold-dark hover:bg-gold/10 border border-transparent hover:border-gold/25 transition-all duration-200 flex items-center gap-1.5">
-                        <RefreshCw size={13} className="text-gold-dark" /> تعيين كلمة المرور
+                      <button onClick={() => handleReset(u._id)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-gold-dark hover:bg-gold/10 border border-transparent hover:border-gold/25 transition-all flex items-center gap-1.5">
+                        <RefreshCw size={12} /> إعادة كلمة المرور
                       </button>
                       {u.role !== "admin" && u.role !== "superadmin" && (
                         <button onClick={() => setActive({ token, userId: u._id, isActive: !u.isActive })}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border border-transparent
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-transparent
                             ${u.isActive ? "text-red-600 hover:bg-red-50 hover:border-red-200/55" : "text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200/55"}`}>
-                          {u.isActive ? "إيقاف الحساب" : "تفعيل الحساب"}
+                          {u.isActive ? "إيقاف" : "تفعيل"}
                         </button>
                       )}
                     </div>
@@ -500,4 +564,3 @@ function UsersAdmin({ token, onToast, currentUserId }: { token: string; onToast:
     </div>
   );
 }
-

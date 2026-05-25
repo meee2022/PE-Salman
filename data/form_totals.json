@@ -1,0 +1,122 @@
+[
+  {
+    "supervisorName": "فيصل عبدالعزيز البدر",
+    "shortKey": "فيصل البدر",
+    "totalVisits": 49,
+    "classroomVisits": 9,
+    "examApproval": 4,
+    "schoolsCount": 4,
+    "examJudging": 0,
+    "coordinatorFollowup": 6
+  },
+  {
+    "supervisorName": "أحمد يوسف غريب أبوالفين",
+    "shortKey": "احمد ابوالفين",
+    "totalVisits": 53,
+    "classroomVisits": 14,
+    "examApproval": 20,
+    "schoolsCount": 7,
+    "examJudging": 9,
+    "coordinatorFollowup": 14
+  },
+  {
+    "supervisorName": "علي حمد محمد الكبيسي",
+    "shortKey": "علي الكبيسي",
+    "totalVisits": 34,
+    "classroomVisits": 15,
+    "examApproval": 0,
+    "schoolsCount": 0,
+    "examJudging": 0,
+    "coordinatorFollowup": 0
+  },
+  {
+    "supervisorName": "أحمد صالح أحمد الرئيسي",
+    "shortKey": "احمد الرئيسي",
+    "totalVisits": 54,
+    "classroomVisits": 19,
+    "examApproval": 0,
+    "schoolsCount": 0,
+    "examJudging": 5,
+    "coordinatorFollowup": 15
+  },
+  {
+    "supervisorName": "مبارك عبدالعزيز ابراهيم المالك",
+    "shortKey": "مبارك المالك",
+    "totalVisits": 40,
+    "classroomVisits": 8,
+    "examApproval": 60,
+    "schoolsCount": 22,
+    "examJudging": 5,
+    "coordinatorFollowup": 15
+  },
+  {
+    "supervisorName": "جميله الماس سعيد الحمد",
+    "shortKey": "جميله الحمد",
+    "totalVisits": 52,
+    "classroomVisits": 22,
+    "examApproval": 44,
+    "schoolsCount": 16,
+    "examJudging": 8,
+    "coordinatorFollowup": 25
+  },
+  {
+    "supervisorName": "اقبال عبدالله السليمان",
+    "shortKey": "اقبال السليمان",
+    "totalVisits": 50,
+    "classroomVisits": 36,
+    "examApproval": 72,
+    "schoolsCount": 21,
+    "examJudging": 15,
+    "coordinatorFollowup": 19
+  },
+  {
+    "supervisorName": "حنان خميس حران الشمري",
+    "shortKey": "حنان الشمري",
+    "totalVisits": 32,
+    "classroomVisits": 25,
+    "examApproval": 0,
+    "schoolsCount": 13,
+    "examJudging": 0,
+    "coordinatorFollowup": 1
+  },
+  {
+    "supervisorName": "عائشة حمد محمد المهندي",
+    "shortKey": "عائشه المهندي",
+    "totalVisits": 39,
+    "classroomVisits": 21,
+    "examApproval": 45,
+    "schoolsCount": 18,
+    "examJudging": 4,
+    "coordinatorFollowup": 13
+  },
+  {
+    "supervisorName": "هيام صلاح الغرابات",
+    "shortKey": "هيام الغرابات",
+    "totalVisits": 60,
+    "classroomVisits": 72,
+    "examApproval": 114,
+    "schoolsCount": 38,
+    "examJudging": 6,
+    "coordinatorFollowup": 18
+  },
+  {
+    "supervisorName": "لينا سعيد محمد زوكاري",
+    "shortKey": "لينا زوكاري",
+    "totalVisits": 43,
+    "classroomVisits": 52,
+    "examApproval": 75,
+    "schoolsCount": 32,
+    "examJudging": 3,
+    "coordinatorFollowup": 16
+  },
+  {
+    "supervisorName": "موزة عبدالله على الحرمي",
+    "shortKey": "موزه الحرمي",
+    "totalVisits": 39,
+    "classroomVisits": 14,
+    "examApproval": 49,
+    "schoolsCount": 33,
+    "examJudging": 1,
+    "coordinatorFollowup": 15
+  }
+]

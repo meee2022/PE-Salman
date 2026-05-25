@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { getAuthUser, canSeeAll, requireAdminMutation } from "./permissions";
 import type { MutationCtx } from "./_generated/server";
 
-const LEAVE_CODES = new Set(["LV", "SL", "AB", "WP"]);
+const LEAVE_CODES = new Set(["LV", "SL", "AB", "WP", "HC", "CA"]);
 
 // ─── إعادة حساب الملخص السنوي لموجه واحد من سجلات اليومية ───────
 async function recomputeForSupervisor(
@@ -36,6 +36,8 @@ async function recomputeForSupervisor(
     VP: counts.VP ?? 0,
     OL: counts.OL ?? 0,
     WP: counts.WP ?? 0,
+    HC: counts.HC ?? 0,
+    CA: counts.CA ?? 0,
     schoolingDays: logs.filter((l) => !LEAVE_CODES.has(l.code)).length,
   };
 
@@ -53,7 +55,7 @@ const ACTIVITY_CODE = v.union(
   v.literal("OF"), v.literal("VS"), v.literal("CL"), v.literal("LV"),
   v.literal("SL"), v.literal("TR"), v.literal("MT"), v.literal("AC"),
   v.literal("AB"), v.literal("SP"), v.literal("VP"), v.literal("OL"),
-  v.literal("WP")
+  v.literal("WP"), v.literal("HC"), v.literal("CA")
 );
 
 export const listByMonth = query({
@@ -123,11 +125,22 @@ export const logsInRange = query({
   args: { start: v.string(), end: v.string(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx, args.token);
-    if (!canSeeAll(user)) return [];
-    return ctx.db
-      .query("activityLogs")
-      .withIndex("by_date", (q) => q.gte("date", args.start).lte("date", args.end))
-      .collect();
+    if (!user) return [];
+    if (canSeeAll(user)) {
+      return ctx.db
+        .query("activityLogs")
+        .withIndex("by_date", (q) => q.gte("date", args.start).lte("date", args.end))
+        .collect();
+    }
+    // موجه: يرى سجلاته هو فقط (قراءة فقط)
+    if (user.role === "supervisor" && user.supervisorId) {
+      const all = await ctx.db
+        .query("activityLogs")
+        .withIndex("by_supervisor_date", (q) => q.eq("supervisorId", user.supervisorId!))
+        .collect();
+      return all.filter((l) => l.date >= args.start && l.date <= args.end);
+    }
+    return [];
   },
 });
 
@@ -180,7 +193,7 @@ export const importSupervisorLogs = mutation({
   args: {
     supervisorName: v.string(),
     academicYear: v.string(),
-    logs: v.array(v.object({ date: v.string(), code: ACTIVITY_CODE })),
+    logs: v.array(v.object({ date: v.string(), code: ACTIVITY_CODE, note: v.optional(v.string()) })),
     token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -233,7 +246,25 @@ export const importSupervisorLogs = mutation({
       if (bestScore >= minMatch && bestSup) supervisor = bestSup;
     }
 
-    if (!supervisor) throw new Error(`لم يُعثر على الموجه: ${args.supervisorName}`);
+    // 4) إنشاء الموجه تلقائياً إذا لم يُوجَد
+    if (!supervisor) {
+      const allSeqs = allSups.map(s => s.seq ?? 0);
+      const nextSeq = allSeqs.length ? Math.max(...allSeqs) + 1 : 1;
+      const words = args.supervisorName.trim().split(/\s+/);
+      const shortKey = words.length >= 2 ? `${words[0]} ${words[words.length - 1]}` : args.supervisorName;
+      const newId = await ctx.db.insert("supervisors", {
+        name: args.supervisorName,
+        nameKey: normTarget,
+        shortKey,
+        isActive: true,
+        jobTitle: "موجه تربوي",
+        seq: nextSeq,
+        personalId: `auto-${nextSeq}`,
+        jobNumber: `auto-${nextSeq}`,
+        gender: "male" as const,
+      });
+      supervisor = (await ctx.db.get(newId))!;
+    }
 
     let inserted = 0;
     let updated = 0;
@@ -245,13 +276,14 @@ export const importSupervisorLogs = mutation({
         )
         .first();
       if (existing) {
-        await ctx.db.patch(existing._id, { code: log.code });
+        await ctx.db.patch(existing._id, { code: log.code, notes: log.note });
         updated++;
       } else {
         await ctx.db.insert("activityLogs", {
           supervisorId: supervisor._id,
           date: log.date,
           code: log.code,
+          notes: log.note,
           academicYear: args.academicYear,
         });
         inserted++;
@@ -285,16 +317,24 @@ export const summaries = query({
   args: { academicYear: v.string(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx, args.token);
-    if (!canSeeAll(user)) return [];
-    const all = await ctx.db.query("activitySummaries").collect();
-    const rows = all.filter((r) => r.academicYear === args.academicYear);
-
-    return Promise.all(
-      rows.map(async (r) => ({
-        ...r,
-        supervisor: await ctx.db.get(r.supervisorId),
-      }))
-    );
+    if (!user) return [];
+    if (canSeeAll(user)) {
+      const all = await ctx.db.query("activitySummaries").collect();
+      const rows = all.filter((r) => r.academicYear === args.academicYear);
+      return Promise.all(rows.map(async (r) => ({ ...r, supervisor: await ctx.db.get(r.supervisorId) })));
+    }
+    // موجه: يرى ملخصه السنوي فقط
+    if (user.role === "supervisor" && user.supervisorId) {
+      const row = await ctx.db
+        .query("activitySummaries")
+        .withIndex("by_supervisor_year", (q) =>
+          q.eq("supervisorId", user.supervisorId!).eq("academicYear", args.academicYear)
+        )
+        .first();
+      if (!row) return [];
+      return [{ ...row, supervisor: await ctx.db.get(row.supervisorId) }];
+    }
+    return [];
   },
 });
 
@@ -349,7 +389,7 @@ export const upsertSummary = mutation({
     OF: v.number(), VS: v.number(), CL: v.number(), LV: v.number(),
     SL: v.number(), TR: v.number(), MT: v.number(), AC: v.number(),
     AB: v.number(), SP: v.number(), VP: v.number(), OL: v.number(),
-    WP: v.number(),
+    WP: v.number(), HC: v.optional(v.number()), CA: v.optional(v.number()),
     schoolingDays: v.number(),
   },
   handler: async (ctx, args) => {
@@ -364,5 +404,80 @@ export const upsertSummary = mutation({
       return existing._id;
     }
     return ctx.db.insert("activitySummaries", args);
+  },
+});
+
+// ── فحص السجلات اليتيمة (supervisorId يشير لموجه محذوف) ──────────
+export const orphanedLogStats = query({
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, args.token);
+    if (!user || !canSeeAll(user)) return [];
+    const allLogs = await ctx.db.query("activityLogs").collect();
+    const allSups = await ctx.db.query("supervisors").collect();
+    // نستخدم String() بدلاً من as string لضمان التحويل الفعلي
+    const supIds  = new Set(allSups.map((s) => String(s._id)));
+    const byId    = new Map<string, number>();
+    for (const l of allLogs) {
+      const sid = String(l.supervisorId);
+      if (!supIds.has(sid))
+        byId.set(sid, (byId.get(sid) ?? 0) + 1);
+    }
+    return Array.from(byId.entries()).map(([supervisorId, count]) => ({ supervisorId, count }));
+  },
+});
+
+// ── إعادة ربط السجلات اليتيمة بموجه نشط ─────────────────────────
+export const reassignOrphanedLogs = mutation({
+  args: {
+    // v.id يتحقق من format فقط — لا يشترط وجود الـ document
+    orphanedId: v.id("supervisors"),
+    targetId:   v.id("supervisors"),
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+    // نستخدم الـ index مباشرةً — orphanedId صالح الـ format حتى بعد حذف الـ document
+    const orphaned = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_supervisor_date", (q) => q.eq("supervisorId", args.orphanedId))
+      .collect();
+    const targetLogs = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_supervisor_date", (q) => q.eq("supervisorId", args.targetId))
+      .collect();
+    const taken = new Set(targetLogs.map((l) => l.date));
+    let moved = 0, skipped = 0;
+    for (const log of orphaned) {
+      if (!taken.has(log.date)) {
+        await ctx.db.patch(log._id, { supervisorId: args.targetId });
+        taken.add(log.date);
+        moved++;
+      } else {
+        await ctx.db.delete(log._id);
+        skipped++;
+      }
+    }
+    return { moved, skipped };
+  },
+});
+
+// ── مسح كل سجلات النشاط لعام دراسي معيّن (للأدمن فقط) ───────────
+export const clearAllActivityForYear = mutation({
+  args: { academicYear: v.string(), token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+
+    // مسح activityLogs
+    const logs = await ctx.db.query("activityLogs").collect();
+    const yearLogs = logs.filter(l => (l.academicYear ?? "2025-2026") === args.academicYear);
+    for (const l of yearLogs) await ctx.db.delete(l._id);
+
+    // مسح activitySummaries
+    const summaries = await ctx.db.query("activitySummaries").collect();
+    const yearSummaries = summaries.filter(s => s.academicYear === args.academicYear);
+    for (const s of yearSummaries) await ctx.db.delete(s._id);
+
+    return { deletedLogs: yearLogs.length, deletedSummaries: yearSummaries.length };
   },
 });

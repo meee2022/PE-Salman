@@ -14,10 +14,21 @@ function isAllowedForSupervisor(pathname: string, home: string) {
     pathname === home ||
     pathname === "/dashboard/settings" ||
     pathname.startsWith("/dashboard/forms") ||
+    pathname.startsWith("/dashboard/teacher-forms") ||
+    pathname.startsWith("/dashboard/exam-forms") ||
+    pathname.startsWith("/dashboard/exam-followup") ||
+    pathname.startsWith("/dashboard/exam-arbitration") ||
+    pathname.startsWith("/dashboard/prof-dev") ||
+    pathname.startsWith("/dashboard/meetings") ||
+    pathname.startsWith("/dashboard/new-teacher") ||
     pathname.startsWith("/dashboard/teachers") ||
     pathname.startsWith("/dashboard/activity") ||
     pathname.startsWith("/dashboard/remote") ||
-    pathname.startsWith("/dashboard/compliance")
+    pathname.startsWith("/dashboard/compliance") ||
+    pathname.startsWith("/dashboard/plans") ||
+    pathname.startsWith("/dashboard/deputy-principal") ||
+    pathname.startsWith("/dashboard/principal-forms") ||
+    pathname.startsWith("/dashboard/prof-licenses")
   );
 }
 

@@ -1,0 +1,101 @@
+[
+  {
+    "name": "فيصل عبدالعزيز البدر",
+    "shortKey": "فيصل البدر",
+    "required": 10,
+    "covered": 10,
+    "forms": 10,
+    "coverageRate": 100.0,
+    "formsRate": 100.0
+  },
+  {
+    "name": "أحمد يوسف أبوالفين",
+    "shortKey": "احمد ابوالفين",
+    "required": 10,
+    "covered": 10,
+    "forms": 10,
+    "coverageRate": 100.0,
+    "formsRate": 100.0
+  },
+  {
+    "name": "علي حمد الكبيسي",
+    "shortKey": "علي الكبيسي",
+    "required": 10,
+    "covered": 8,
+    "forms": 8,
+    "coverageRate": 80.0,
+    "formsRate": 80.0
+  },
+  {
+    "name": "أحمد صالح الرئيسي",
+    "shortKey": "احمد الرئيسي",
+    "required": 10,
+    "covered": 11,
+    "forms": 20,
+    "coverageRate": 110.0,
+    "formsRate": 200.0
+  },
+  {
+    "name": "مبارك عبدالعزيز المالك",
+    "shortKey": "مبارك المالك",
+    "required": 10,
+    "covered": 9,
+    "forms": 9,
+    "coverageRate": 90.0,
+    "formsRate": 90.0
+  },
+  {
+    "name": "حنان خميس الشمري",
+    "shortKey": "حنان الشمري",
+    "required": 10,
+    "covered": 7,
+    "forms": 7,
+    "coverageRate": 70.0,
+    "formsRate": 70.0
+  },
+  {
+    "name": "عائشة حمد المهندي",
+    "shortKey": "عائشه المهندي",
+    "required": 10,
+    "covered": 11,
+    "forms": 11,
+    "coverageRate": 110.0,
+    "formsRate": 110.0
+  },
+  {
+    "name": "هيام صلاح الغرابات",
+    "shortKey": "هيام الغرابات",
+    "required": 10,
+    "covered": 15,
+    "forms": 18,
+    "coverageRate": 150.0,
+    "formsRate": 180.0
+  },
+  {
+    "name": "لينا سعيد زوكاري",
+    "shortKey": "لينا زوكاري",
+    "required": 10,
+    "covered": 10,
+    "forms": 15,
+    "coverageRate": 100.0,
+    "formsRate": 150.0
+  },
+  {
+    "name": "موزة عبدالله الحرمي",
+    "shortKey": "موزه الحرمي",
+    "required": 10,
+    "covered": 10,
+    "forms": 10,
+    "coverageRate": 100.0,
+    "formsRate": 100.0
+  },
+  {
+    "name": "د.فجر محمد الكبيسي",
+    "shortKey": "فجر الكبيسي",
+    "required": 10,
+    "covered": 13,
+    "forms": 13,
+    "coverageRate": 130.0,
+    "formsRate": 130.0
+  }
+]

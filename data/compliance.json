@@ -1,0 +1,72 @@
+[
+  {
+    "supervisorName": "فيصل البدر",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "أحمد أبوالفين",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "علي الكبيسي",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "أحمد الرئيسي",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "مبارك المالك",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "حنان الشمري",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "عائشة المهندي",
+    "integrityPledge": true,
+    "ramadanIntegration": true
+  },
+  {
+    "supervisorName": "هيام الغرابات",
+    "integrityPledge": true,
+    "ramadanIntegration": true
+  },
+  {
+    "supervisorName": "لينا زوكاري",
+    "integrityPledge": false,
+    "ramadanIntegration": true
+  },
+  {
+    "supervisorName": "موزة الحرمي",
+    "integrityPledge": true,
+    "ramadanIntegration": true
+  },
+  {
+    "supervisorName": "د.فجر الكبيسي",
+    "integrityPledge": true,
+    "ramadanIntegration": true
+  },
+  {
+    "supervisorName": "ندا البلوشى",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "ندى اليزيدي",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  },
+  {
+    "supervisorName": "لطيفة بو جسوم",
+    "integrityPledge": false,
+    "ramadanIntegration": false
+  }
+]

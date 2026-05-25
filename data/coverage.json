@@ -1,0 +1,123 @@
+[
+  {
+    "supervisorName": "فيصل البدر",
+    "shortKey": "فيصل البدر",
+    "gender": "male",
+    "schoolsRequired": 16,
+    "schoolsCovered": 16,
+    "formsCount": 16,
+    "coverageRate": 1,
+    "formsRate": 1,
+    "status": "✅ مكتمل"
+  },
+  {
+    "supervisorName": "أحمد أبوالفين",
+    "shortKey": "احمد ابوالفين",
+    "gender": "male",
+    "schoolsRequired": 16,
+    "schoolsCovered": 16,
+    "formsCount": 38,
+    "coverageRate": 1,
+    "formsRate": 2.38,
+    "status": "✅ ممتاز"
+  },
+  {
+    "supervisorName": "علي الكبيسي",
+    "shortKey": "علي الكبيسي",
+    "gender": "male",
+    "schoolsRequired": 15,
+    "schoolsCovered": 14,
+    "formsCount": 41,
+    "coverageRate": 0.93,
+    "formsRate": 2.73,
+    "status": "⚠️ قريب"
+  },
+  {
+    "supervisorName": "أحمد الرئيسي",
+    "shortKey": "احمد الرئيسي",
+    "gender": "male",
+    "schoolsRequired": 16,
+    "schoolsCovered": 16,
+    "formsCount": 37,
+    "coverageRate": 1,
+    "formsRate": 2.31,
+    "status": "✅ ممتاز"
+  },
+  {
+    "supervisorName": "مبارك المالك",
+    "shortKey": "مبارك المالك",
+    "gender": "male",
+    "schoolsRequired": 16,
+    "schoolsCovered": 16,
+    "formsCount": 28,
+    "coverageRate": 1,
+    "formsRate": 1.75,
+    "status": "✅ مكتمل"
+  },
+  {
+    "supervisorName": "حنان الشمري",
+    "shortKey": "حنان الشمري",
+    "gender": "female",
+    "schoolsRequired": 24,
+    "schoolsCovered": 23,
+    "formsCount": 46,
+    "coverageRate": 0.96,
+    "formsRate": 1.92,
+    "status": "⚠️ قريب"
+  },
+  {
+    "supervisorName": "عائشة المهندي",
+    "shortKey": "عائشه المهندي",
+    "gender": "female",
+    "schoolsRequired": 24,
+    "schoolsCovered": 24,
+    "formsCount": 85,
+    "coverageRate": 1,
+    "formsRate": 3.54,
+    "status": "🏆 متميز"
+  },
+  {
+    "supervisorName": "هيام الغرابات",
+    "shortKey": "هيام الغرابات",
+    "gender": "female",
+    "schoolsRequired": 24,
+    "schoolsCovered": 24,
+    "formsCount": 41,
+    "coverageRate": 1,
+    "formsRate": 1.71,
+    "status": "✅ مكتمل"
+  },
+  {
+    "supervisorName": "لينا زوكاري",
+    "shortKey": "لينا زوكاري",
+    "gender": "female",
+    "schoolsRequired": 24,
+    "schoolsCovered": 24,
+    "formsCount": 24,
+    "coverageRate": 1,
+    "formsRate": 1,
+    "status": "✅ مكتمل"
+  },
+  {
+    "supervisorName": "موزة الحرمي",
+    "shortKey": "موزه الحرمي",
+    "gender": "female",
+    "schoolsRequired": 24,
+    "schoolsCovered": 24,
+    "formsCount": 30,
+    "coverageRate": 1,
+    "formsRate": 1.25,
+    "status": "✅ مكتمل"
+  },
+  {
+    "supervisorName": "د.فجر الكبيسي",
+    "shortKey": "فجر الكبيسي",
+    "gender": "female",
+    "schoolsRequired": 23,
+    "schoolsCovered": 23,
+    "formsCount": 54,
+    "coverageRate": 1,
+    "formsRate": 2.35,
+    "status": "✅ ممتاز"
+  }
+]

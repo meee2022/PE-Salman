@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Users, School, CalendarDays, BarChart3, ClipboardList,
   UserSearch, GraduationCap, Settings, Dumbbell, MoreHorizontal,
-  LogOut, X, ChevronDown, UserCircle, ShieldCheck, FileBarChart2
+  LogOut, X, ChevronDown, UserCircle, ShieldCheck, FileBarChart2, BookOpen
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
@@ -21,7 +21,7 @@ function buildNav(role?: string, supervisorId?: string) {
         { href: home, label: "ملفي", icon: UserCircle },
         { href: "/dashboard/teachers", label: "المعلمون", icon: Users },
         { href: "/dashboard/activity", label: "النشاط", icon: CalendarDays },
-        { href: "/dashboard/forms", label: "الاستمارات", icon: ClipboardList },
+        { href: "/dashboard/forms-center", label: "الاستمارات", icon: ClipboardList },
       ] as NavItem[],
       secondary: [
         { href: "/dashboard/remote", label: "التعلم عن بعد", icon: GraduationCap },
@@ -39,8 +39,9 @@ function buildNav(role?: string, supervisorId?: string) {
       { href: "/dashboard/activity", label: "النشاط", icon: CalendarDays },
     ] as NavItem[],
     secondary: [
+      { href: "/dashboard/plans", label: "الخطط", icon: BookOpen },
       { href: "/dashboard/coverage", label: "التغطية والمؤشرات", icon: BarChart3 },
-      { href: "/dashboard/forms", label: "الاستمارات", icon: ClipboardList },
+      { href: "/dashboard/forms-center", label: "الاستمارات", icon: ClipboardList },
       { href: "/dashboard/interviews", label: "المقابلات", icon: UserSearch },
       { href: "/dashboard/remote", label: "التعلم عن بعد", icon: GraduationCap },
       { href: "/dashboard/teachers", label: "المعلمون", icon: Users },

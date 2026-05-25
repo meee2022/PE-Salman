@@ -25,7 +25,36 @@ export const list = query({
     const active = args.includeInactive ? all : all.filter((s) => s.isActive);
     // الموجه لا يرى إلا نفسه
     if (!canSeeAll(user)) return active.filter((s) => s._id === user.supervisorId);
-    return active;
+
+    // ── إزالة التكرار بطبقتين ──────────────────────────────────
+    // الطبقة الأولى: تجميع بالـ nameKey (الاسم الكامل المُنقَّح)
+    const byNameKey = new Map<string, { primary: typeof active[0]; allIds: string[] }>();
+    for (const s of active) {
+      const key = s.nameKey || normName(s.name);
+      const prev = byNameKey.get(key);
+      if (!prev) {
+        byNameKey.set(key, { primary: s, allIds: [s._id as string] });
+      } else {
+        prev.allIds.push(s._id as string);
+        if (s.seq < prev.primary.seq) prev.primary = s;
+      }
+    }
+    // الطبقة الثانية: دمج المجموعات بالـ shortKey (أول + آخر كلمة)
+    // يعالج الحالات التي يختلف فيها الاسم الأوسط بين السجلين
+    const seenMap = new Map<string, { primary: typeof active[0]; allIds: string[] }>();
+    for (const { primary, allIds } of byNameKey.values()) {
+      const sk = shortKeyOf(primary.name);
+      const prev = seenMap.get(sk);
+      if (!prev) {
+        seenMap.set(sk, { primary, allIds: [...allIds] });
+      } else {
+        prev.allIds.push(...allIds);
+        if (primary.seq < prev.primary.seq) prev.primary = primary;
+      }
+    }
+    return Array.from(seenMap.values())
+      .sort((a, b) => a.primary.seq - b.primary.seq)
+      .map(({ primary, allIds }) => ({ ...primary, duplicateIds: allIds }));
   },
 });
 
@@ -140,6 +169,84 @@ export const upsert = mutation({
   },
 });
 
+// مساعد: يحوّل null → undefined لتوافق Convex
+const nn = (v: string | null | undefined): string | undefined =>
+  v === null ? undefined : v;
+
+// ── استيراد جماعي للموجهين (upsert by jobNumber) ───────────────────
+export const bulkUpsert = mutation({
+  args: {
+    supervisors: v.array(v.object({
+      seq: v.number(),
+      personalId: v.union(v.string(), v.null()),
+      jobNumber: v.string(),
+      name: v.string(),
+      nameKey: v.string(),
+      shortKey: v.string(),
+      jobTitle: v.union(v.string(), v.null()),
+      grade: v.optional(v.union(v.string(), v.null())),
+      gender: v.union(v.literal("male"), v.literal("female")),
+      officePhone: v.union(v.string(), v.null()),
+      mobile: v.union(v.string(), v.null()),
+      email: v.union(v.string(), v.null()),
+      poBox: v.union(v.string(), v.null()),
+      residence: v.union(v.string(), v.null()),
+      nationality: v.union(v.string(), v.null()),
+      contractType: v.union(v.string(), v.null()),
+      jobCategory: v.union(v.string(), v.null()),
+      joinDate: v.union(v.string(), v.null()),
+      schoolsCount: v.optional(v.number()),
+      coordinatorsCount: v.optional(v.number()),
+      teachersCount: v.optional(v.number()),
+      totalFollowed: v.optional(v.number()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    let inserted = 0, updated = 0;
+    for (const sup of args.supervisors) {
+      // Try find by jobNumber first, then by personalId
+      let existing = await ctx.db
+        .query("supervisors")
+        .filter(q => q.eq(q.field("jobNumber"), sup.jobNumber))
+        .first();
+      if (!existing && sup.personalId) {
+        existing = await ctx.db
+          .query("supervisors")
+          .filter(q => q.eq(q.field("personalId"), sup.personalId))
+          .first();
+      }
+      const data = {
+        seq: sup.seq,
+        personalId: nn(sup.personalId) ?? "",
+        jobNumber: sup.jobNumber,
+        name: sup.name,
+        nameKey: sup.nameKey,
+        shortKey: sup.shortKey,
+        jobTitle: nn(sup.jobTitle) ?? "",
+        gender: sup.gender,
+        officePhone: nn(sup.officePhone),
+        mobile: nn(sup.mobile),
+        email: nn(sup.email),
+        poBox: nn(sup.poBox),
+        residence: nn(sup.residence),
+        nationality: nn(sup.nationality),
+        contractType: nn(sup.contractType),
+        jobCategory: nn(sup.jobCategory),
+        joinDate: nn(sup.joinDate),
+        isActive: true,
+      };
+      if (existing) {
+        await ctx.db.patch(existing._id, data);
+        updated++;
+      } else {
+        await ctx.db.insert("supervisors", data);
+        inserted++;
+      }
+    }
+    return { inserted, updated };
+  },
+});
+
 // ── إضافة موجه يدويًا من الموقع — للأدمن ──────────────────────────
 export const create = mutation({
   args: {
@@ -224,6 +331,87 @@ export const setActive = mutation({
   },
 });
 
+// ── دمج المكررين: يشمل النشط والمؤرشف ─────────────────────────
+export const deduplicateSupervisors = mutation({
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+    // نشمل الكل: نشط ومؤرشف (قد يكون الأصل اتأرشف بالخطأ في تشغيل سابق)
+    const all = await ctx.db.query("supervisors").collect();
+
+    // تجميع بطبقتين: nameKey أولاً ثم shortKey (أول + آخر كلمة)
+    const byNameKey = new Map<string, typeof all>();
+    for (const s of all) {
+      const key = s.nameKey || normName(s.name);
+      if (!byNameKey.has(key)) byNameKey.set(key, []);
+      byNameKey.get(key)!.push(s);
+    }
+    const groups = new Map<string, typeof all>();
+    for (const [, grp] of byNameKey) {
+      const sk = shortKeyOf(grp[0].name);
+      if (!groups.has(sk)) groups.set(sk, []);
+      groups.get(sk)!.push(...grp);
+    }
+
+    let deactivated = 0, activated = 0, logsMoved = 0;
+
+    for (const [, group] of groups) {
+      if (group.length <= 1) continue;
+
+      // فحص سريع لكل سجل: هل عنده بيانات؟ (first بدلاً من collect)
+      const checks = await Promise.all(
+        group.map(async (s) => {
+          const first = await ctx.db
+            .query("activityLogs")
+            .withIndex("by_supervisor_date", (q: any) => q.eq("supervisorId", s._id))
+            .first();
+          return { s, hasData: !!first };
+        })
+      );
+      // الأصل: من عنده بيانات أولاً؛ تعادل → الأقل seq
+      checks.sort((a, b) =>
+        (b.hasData ? 1 : 0) - (a.hasData ? 1 : 0) || a.s.seq - b.s.seq
+      );
+      const primary = checks[0].s;
+      const dups    = checks.slice(1).map((c) => c.s);
+
+      // تفعيل الأصل إذا كان مؤرشفاً بالخطأ
+      if (!primary.isActive) {
+        await ctx.db.patch(primary._id, { isActive: true });
+        activated++;
+      }
+
+      // بناء Set من تواريخ الأصل (مرة واحدة فقط)
+      const primaryLogs = await ctx.db
+        .query("activityLogs")
+        .withIndex("by_supervisor_date", (q: any) => q.eq("supervisorId", primary._id))
+        .collect();
+      const primaryDates = new Set(primaryLogs.map((l: any) => l.date as string));
+
+      for (const dup of dups) {
+        const dupLogs = await ctx.db
+          .query("activityLogs")
+          .withIndex("by_supervisor_date", (q: any) => q.eq("supervisorId", dup._id))
+          .collect();
+        for (const log of dupLogs) {
+          if (!primaryDates.has(log.date)) {
+            await ctx.db.patch(log._id, { supervisorId: primary._id });
+            primaryDates.add(log.date);
+            logsMoved++;
+          } else {
+            await ctx.db.delete(log._id);
+          }
+        }
+        if (dup.isActive) {
+          await ctx.db.patch(dup._id, { isActive: false });
+          deactivated++;
+        }
+      }
+    }
+    return { deactivated, activated, logsMoved };
+  },
+});
+
 // ── حذف نهائي — للأدمن (يمنع الحذف إن كان عليه إسنادات) ───────────
 export const remove = mutation({
   args: { id: v.id("supervisors"), token: v.optional(v.string()) },
@@ -233,7 +421,13 @@ export const remove = mutation({
       .query("assignments")
       .withIndex("by_supervisor_year", (q) => q.eq("supervisorId", args.id))
       .first();
-    if (assigned) throw new Error("لا يمكن الحذف: للموجه مدارس مسندة. أرشِفه بدلًا من ذلك أو انقل مدارسه أولًا.");
+    if (assigned) throw new Error("لا يمكن الحذف: للموجه مدارس مسندة. أرشِفه بدلًا من ذلك.");
+    // منع الحذف إن كان للموجه سجلات نشاط يومية
+    const hasLogs = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_supervisor_date", (q) => q.eq("supervisorId", args.id))
+      .first();
+    if (hasLogs) throw new Error("لا يمكن الحذف: للموجه سجلات نشاط يومية. استخدم 'دمج المكررين' بدلاً من الحذف المباشر.");
     const s = await ctx.db.get(args.id);
     await ctx.db.delete(args.id);
     await logAudit(ctx, admin, "delete", "supervisor", args.id, `حذف موجه: ${s?.name ?? ""}`);

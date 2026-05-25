@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, TxtField, NumField, SelectField } from "@/components/ui/Modal";
-import { Search, ArrowLeftRight, School, Check, X, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, ArrowLeftRight, School, Check, X, Plus, Pencil, Trash2, Users, Phone, Mail, Printer, Download } from "lucide-react";
 import { useActiveYear } from "@/hooks/useActiveYear";
+import { exportToCSV, printTable, type ExportColumn } from "@/lib/exportUtils";
 
 type SchoolWithSup = Doc<"schools"> & { supervisor: Doc<"supervisors"> | null };
 type SchoolForm = {
@@ -21,7 +23,7 @@ const emptySchool: SchoolForm = { name: "", gender: "male", level: "ابتدائ
 export default function SchoolsPage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const schools      = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip") as SchoolWithSup[] | undefined;
   const supervisors  = useQuery(api.supervisors.list, token ? { token } : "skip");
   const bulkReassign = useMutation(api.assignments.bulkReassign);
@@ -40,6 +42,7 @@ export default function SchoolsPage() {
   const [targetSupId,  setTargetSupId]  = useState<Id<"supervisors"> | "">("");
   const [saving,       setSaving]       = useState(false);
   const [toast,        setToast]        = useState<string | null>(null);
+  const [teachersOf,   setTeachersOf]   = useState<{ name: string; gender: "male"|"female" } | null>(null);
 
   const filtered = useMemo(() => {
     if (!schools) return [];
@@ -102,6 +105,50 @@ export default function SchoolsPage() {
     } finally { setSaving(false); }
   }
 
+  // أعمدة التصدير/الطباعة
+  const exportColumns: ExportColumn<SchoolWithSup>[] = [
+    { header: "#", value: () => "", align: "center" },
+    { header: "اسم المدرسة", value: (s) => s.name },
+    { header: "فئة الطلاب", value: (s) => (s.gender === "male" ? "بنين" : "بنات"), align: "center" },
+    { header: "المرحلة", value: (s) => s.level ?? "—", align: "center" },
+    { header: "عدد المعلمين", value: (s) => s.teachers ?? 0, align: "center" },
+    { header: "عدد المنسقين", value: (s) => s.coordinators ?? 0, align: "center" },
+    { header: "الموجه المسؤول", value: (s) => s.supervisor?.name ?? "غير مسندة" },
+  ];
+
+  function schoolsFilterDesc() {
+    const parts: string[] = [];
+    if (genderFilter !== "all") parts.push(genderFilter === "male" ? "بنين" : "بنات");
+    if (supFilter !== "all") {
+      const sup = supervisors?.find((x) => x._id === supFilter);
+      if (sup) parts.push(`الموجه: ${sup.name}`);
+    }
+    if (search) parts.push(`بحث: ${search}`);
+    return parts.length ? parts.join(" · ") : `جميع المدارس — العام ${YEAR}`;
+  }
+
+  function handleExport() {
+    if (!filtered.length) return;
+    exportToCSV("المدارس_والتوزيع", exportColumns.filter((c) => c.header !== "#"), filtered);
+  }
+
+  function handlePrint() {
+    if (!filtered.length) return;
+    let i = 0;
+    const cols = exportColumns.map((c) => (c.header === "#" ? { ...c, value: () => String(++i) } : c));
+    printTable({
+      title: "المدارس وتوزيعها على الموجهين",
+      subtitle: schoolsFilterDesc(),
+      columns: cols,
+      rows: filtered,
+      meta: [
+        { label: "إجمالي المدارس", value: filtered.length },
+        { label: "بنين", value: filtered.filter((s) => s.gender === "male").length },
+        { label: "بنات", value: filtered.filter((s) => s.gender === "female").length },
+      ],
+    });
+  }
+
   if (!schools || !supervisors) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -120,12 +167,18 @@ export default function SchoolsPage() {
         subtitle={`${schools.length} مدرسة مدرجة بالخطة — العام الدراسي ${YEAR}`}
         icon={<School size={26} />}
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             {selected.size > 0 && (
               <button onClick={() => setShowModal(true)} className="btn-ghost !border-primary/20 hover:bg-primary/5 text-primary rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition-all">
                 <ArrowLeftRight size={16} /> نقل {selected.size} مدرسة مسندة
               </button>
             )}
+            <button onClick={handlePrint} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-sm transition-all" title="طباعة / حفظ PDF">
+              <Printer size={14} /> طباعة / PDF
+            </button>
+            <button onClick={handleExport} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-sm transition-all" title="تصدير كـ Excel/CSV">
+              <Download size={14} /> تصدير Excel
+            </button>
             {isAdmin && (
               <button onClick={() => setForm({ ...emptySchool })} className="btn-primary">
                 <Plus size={16} /> إضافة مدرسة جديدة
@@ -228,7 +281,19 @@ export default function SchoolsPage() {
                     </span>
                   </td>
                   <td className="text-center text-xs font-semibold text-[#8A7A72]">{school.level ?? "—"}</td>
-                  <td className="text-center text-xs font-bold text-[#6b5a52] font-sans">{school.teachers ?? "—"}</td>
+                  <td className="text-center">
+                    {school.teachers ? (
+                      <button
+                        onClick={() => setTeachersOf({ name: school.name, gender: school.gender })}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-sans bg-primary/5 text-primary hover:bg-primary/10 ring-1 ring-primary/10 transition-all"
+                        title="عرض أسماء المعلمين"
+                      >
+                        <Users size={12} /> {school.teachers}
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-[#bdb0a6] font-sans">—</span>
+                    )}
+                  </td>
                   <td>
                     {school.supervisor ? (
                       <span className="font-bold text-[#2A1418] hover:text-primary transition-colors cursor-pointer">{school.supervisor.name}</span>
@@ -350,12 +415,93 @@ export default function SchoolsPage() {
         </Modal>
       )}
 
+      {/* نافذة أسماء المعلمين */}
+      {teachersOf && (
+        <TeachersModal school={teachersOf} onClose={() => setTeachersOf(null)} />
+      )}
+
       {/* التنبيهات الموقوتة */}
       {toast && (
         <div className="fixed bottom-6 left-6 bg-emerald-600 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-xl z-50 flex items-center gap-2 animate-in border border-emerald-500/25">
           <Check size={16} /> {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── نافذة عرض معلمي مدرسة ──────────────────────────────────────────
+function TeachersModal({ school, onClose }: { school: { name: string; gender: "male"|"female" }; onClose: () => void }) {
+  const teachers = useQuery(api.teachers.bySchoolName, { schoolName: school.name });
+  const coordinators = teachers?.filter((t) => (t.jobTitle ?? "").startsWith("منسق")) ?? [];
+  const regular      = teachers?.filter((t) => !(t.jobTitle ?? "").startsWith("منسق")) ?? [];
+
+  // قفل تمرير الصفحة الخلفية أثناء فتح النافذة
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-[#2A1418]/45 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
+      <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-black/[0.04] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="relative px-6 py-5 bg-gradient-to-l from-[#5C1523] to-[#3B0A14] overflow-hidden shrink-0">
+          <div className="pattern-arabesque absolute inset-0 opacity-[0.4]" />
+          <button onClick={onClose} className="absolute left-4 top-5 text-white/70 hover:text-white transition-colors"><X size={18} /></button>
+          <h3 className="relative text-lg font-black text-white flex items-center gap-2">
+            <Users size={20} className="text-gold" /> معلمو {school.name}
+          </h3>
+          <p className="relative text-xs text-white/75 mt-1.5 font-medium">
+            {teachers === undefined ? "جاري التحميل…" : `${teachers.length} (${coordinators.length} منسق · ${regular.length} معلم)`}
+          </p>
+        </div>
+
+        <div className="p-5 space-y-4 overflow-y-auto">
+          {teachers === undefined ? (
+            <div className="text-center py-8 text-[#8A7A72] text-sm font-bold">جاري التحميل…</div>
+          ) : teachers.length === 0 ? (
+            <div className="text-center py-8 text-[#8A7A72] text-sm font-bold">لا يوجد معلمون مسجّلون لهذه المدرسة</div>
+          ) : (
+            <>
+              {coordinators.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-black text-gold-dark">المنسقون</p>
+                  {coordinators.map((t) => <TeacherRow key={t._id} t={t} accent />)}
+                </div>
+              )}
+              {regular.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-black text-[#8A7A72]">المعلمون</p>
+                  {regular.map((t) => <TeacherRow key={t._id} t={t} />)}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function TeacherRow({ t, accent }: { t: Doc<"teachers">; accent?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 border ${accent ? "bg-gold/5 border-gold/20" : "bg-black/[0.015] border-black/[0.04]"}`}>
+      <div className="min-w-0">
+        <p className="font-bold text-[#2A1418] text-sm truncate">{t.name}</p>
+        <p className="text-[11px] text-[#8A7A72] font-semibold">{t.jobTitle} · {t.classification}</p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {t.mobile && (
+          <a href={`tel:${t.mobile}`} className="text-primary hover:bg-primary/5 rounded-lg p-1.5 transition-all" title={t.mobile}><Phone size={13} /></a>
+        )}
+        {t.email && (
+          <a href={`mailto:${t.email}`} className="text-primary hover:bg-primary/5 rounded-lg p-1.5 transition-all" title={t.email}><Mail size={13} /></a>
+        )}
+      </div>
     </div>
   );
 }

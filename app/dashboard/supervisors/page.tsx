@@ -8,7 +8,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, ModalFooter, TxtField, SelectField, useToast } from "@/components/ui/Modal";
-import { Users, Phone, Mail, Search, ChevronLeft, Plus, Pencil, Trash2, Power } from "lucide-react";
+import { Users, Phone, Mail, Search, ChevronLeft, Plus, Pencil, Trash2, Power, AlertTriangle, RotateCcw } from "lucide-react";
 import { useActiveYear } from "@/hooks/useActiveYear";
 
 type SupForm = {
@@ -21,17 +21,26 @@ const empty: SupForm = { name: "", gender: "male", jobTitle: "موجه تربي�
 export default function SupervisorsPage() {
   const { token, user } = useAuth();
   const YEAR = useActiveYear();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const [showArchived, setShowArchived] = useState(false);
   const supervisors = useQuery(api.supervisors.list, token ? { token, includeInactive: showArchived } : "skip");
   const coverage    = useQuery(api.coverage.listByYear, token ? { academicYear: YEAR, token } : "skip");
 
-  const createSup = useMutation(api.supervisors.create);
-  const updateSup = useMutation(api.supervisors.update);
-  const setActive = useMutation(api.supervisors.setActive);
-  const removeSup = useMutation(api.supervisors.remove);
+  const createSup        = useMutation(api.supervisors.create);
+  const updateSup        = useMutation(api.supervisors.update);
+  const setActive        = useMutation(api.supervisors.setActive);
+  const removeSup        = useMutation(api.supervisors.remove);
+  const deduplicateSups  = useMutation(api.supervisors.deduplicateSupervisors);
+  const reassignOrphaned = useMutation(api.activity.reassignOrphanedLogs);
+
+  // السجلات اليتيمة (موجهون محذوفون لكن بياناتهم لا زالت في قاعدة البيانات)
+  const orphanedStats = useQuery(api.activity.orphanedLogStats, token ? { token } : "skip");
 
   const [search, setSearch] = useState("");
+  const [deduping, setDeduping] = useState(false);
+  const [repairTarget, setRepairTarget] = useState<{ orphanedId: string; count: number } | null>(null);
+  const [repairSup, setRepairSup] = useState<Id<"supervisors"> | "">("");
+  const [repairing, setRepairing] = useState(false);
   const [gender, setGender] = useState<"all" | "male" | "female">("all");
   const [form, setForm] = useState<SupForm | null>(null);
   const [saving, setSaving] = useState(false);
@@ -76,6 +85,41 @@ export default function SupervisorsPage() {
     catch (e: any) { alert(e?.message ?? "تعذّر الحذف"); }
   }
 
+  async function runRepair() {
+    if (!repairTarget || !repairSup) return;
+    setRepairing(true);
+    try {
+      const r = await reassignOrphaned({
+        orphanedId: repairTarget.orphanedId as Id<"supervisors">,
+        targetId:   repairSup as Id<"supervisors">,
+        token: token ?? undefined,
+      });
+      show(`✅ تم استعادة ${r.moved} تسجيل يومي (تجاهل ${r.skipped} مكرر)`);
+      setRepairTarget(null);
+      setRepairSup("");
+    } catch (e: any) {
+      console.error("reassignOrphanedLogs error:", e);
+      alert(`❌ خطأ في الاستعادة:\n${e?.message ?? String(e)}`);
+    } finally { setRepairing(false); }
+  }
+
+  async function runDeduplicate() {
+    if (!confirm("سيتم إخفاء جميع السجلات المكررة والاحتفاظ بنسخة واحدة لكل موجه. هل تريد المتابعة؟")) return;
+    setDeduping(true);
+    try {
+      const r = await deduplicateSups({ token: token ?? undefined });
+      const parts = [];
+      if (r.deactivated > 0) parts.push(`أُرشف ${r.deactivated} مكرر`);
+      if ((r as any).activated > 0) parts.push(`أُعيد تفعيل ${(r as any).activated} أصل`);
+      if (r.logsMoved > 0) parts.push(`نُقل ${r.logsMoved} تسجيل يومي`);
+      show(parts.length > 0 ? `✅ ${parts.join(" · ")}` : "✅ لا توجد سجلات مكررة");
+    } catch (e: any) {
+      alert(`❌ فشل دمج المكررين:\n${e?.message ?? "خطأ غير معروف"}`);
+    } finally {
+      setDeduping(false);
+    }
+  }
+
   return (
     <div className="space-y-6 animate-in">
       <PageHeader
@@ -83,11 +127,70 @@ export default function SupervisorsPage() {
         subtitle={`${supervisors.length} موجه مسجل في النظام`}
         icon={<Users size={26} />}
         action={isAdmin && (
-          <button onClick={() => setForm({ ...empty })} className="btn-primary">
-            <Plus size={16} /> إضافة موجه جديد
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={runDeduplicate}
+              disabled={deduping}
+              className="btn-ghost text-xs !py-2 !px-3 text-amber-700 border-amber-300/40 hover:bg-amber-50 disabled:opacity-60"
+            >
+              {deduping ? "جاري الدمج…" : "دمج المكررين"}
+            </button>
+            <button onClick={() => setForm({ ...empty })} className="btn-primary">
+              <Plus size={16} /> إضافة موجه جديد
+            </button>
+          </div>
         )}
       />
+
+      {/* ── بانر السجلات اليتيمة ── */}
+      {isAdmin && orphanedStats && orphanedStats.length > 0 && (
+        <div className="card-luxurious border-r-4 !border-r-amber-500 bg-amber-50/80 p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+            <p className="text-xs font-extrabold text-amber-800">
+              تم اكتشاف سجلات نشاط يومية لموجهين محذوفين — البيانات محفوظة لكن تحتاج إعادة ربط
+            </p>
+          </div>
+          {orphanedStats.map((o) => (
+            <div key={o.supervisorId} className="flex items-center gap-3 bg-white/70 rounded-xl px-4 py-2.5 border border-amber-200/60">
+              <span className="text-xs font-bold text-amber-700 flex-1">
+                معرّف محذوف: <code className="font-mono text-[10px] bg-amber-100 px-1 rounded">{o.supervisorId.slice(-8)}</code>
+                &nbsp;·&nbsp;<strong>{o.count}</strong> تسجيل يومي
+              </span>
+              {repairTarget?.orphanedId === o.supervisorId ? (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={repairSup}
+                    onChange={(e) => setRepairSup(e.target.value as Id<"supervisors">)}
+                    className="text-xs border border-gold/30 rounded-xl px-2 py-1.5 bg-white outline-none focus:ring-1 focus:ring-primary font-semibold"
+                  >
+                    <option value="">اختر الموجه الصحيح...</option>
+                    {(supervisors ?? []).filter(s => s.isActive).map((s) => (
+                      <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={runRepair}
+                    disabled={!repairSup || repairing}
+                    className="btn-primary text-xs !py-1.5 !px-3 disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <RotateCcw size={12} className={repairing ? "animate-spin" : ""} />
+                    {repairing ? "جاري الاستعادة..." : "استعد"}
+                  </button>
+                  <button onClick={() => { setRepairTarget(null); setRepairSup(""); }} className="text-xs text-stone-400 hover:text-stone-600">إلغاء</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setRepairTarget(o)}
+                  className="text-xs font-extrabold text-amber-700 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300/50 transition-all"
+                >
+                  إعادة ربط البيانات
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* فلاتر البحث والفرز */}
       <div className="card-luxurious p-4 flex flex-wrap gap-4 items-center bg-white/70 backdrop-blur-md">

@@ -115,6 +115,14 @@ body {
   }
   .btn-ghost:hover { @apply bg-black/[0.02] border-black/[0.12]; }
 
+  /* ── زر ثانوي ── */
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[#5C1523] border border-gold/30 bg-gold/10;
+    transition: all 0.2s ease;
+  }
+  .btn-secondary:hover { @apply bg-gold/20 border-gold/45; }
+  .btn-secondary:disabled { @apply opacity-50; }
+
   /* ── حقل إدخال ── */
   .field {
     @apply w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] bg-white text-sm;
@@ -327,6 +335,13 @@ body {
   .data-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .data-table tbody tr, .card { page-break-inside: avoid; }
   .data-table { font-size: 11px; }
+
+  /* جداول الاستمارات: السماح للجدول بالتدفّق عبر الصفحات مع إبقاء كل صف متماسكاً */
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  td, th { page-break-inside: avoid; }
+  /* منع حاويات overflow من حبس الجدول في صفحة واحدة */
+  .overflow-x-auto, .overflow-auto, .overflow-y-auto { overflow: visible !important; }
 
   /* إظهار ألوان الهوية بدقة */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }

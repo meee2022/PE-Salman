@@ -143,6 +143,130 @@ export const remove = mutation({
   },
 });
 
+// مسح كل توزيعات سنة واستيراد توزيع جديد من ملف JSON
+export const clearAndBulkImport = mutation({
+  args: {
+    academicYear: v.string(),
+    assignments: v.array(v.object({
+      supervisorName: v.string(),
+      schools: v.array(v.string()),
+    })),
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+
+    // 1) مسح كل التوزيعات للسنة
+    const existing = await ctx.db
+      .query("assignments")
+      .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
+      .collect();
+    for (const a of existing) await ctx.db.delete(a._id);
+
+    // 2) جلب كل الموجهين والمدارس مرة واحدة
+    const allSups = await ctx.db.query("supervisors").collect();
+    const allSchools = await ctx.db.query("schools").collect();
+
+    function normStr(s: string) {
+      return s
+        .replace(/\s+/g, " ").trim()
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/[ً-ْٰ]/g, "");
+    }
+
+    function findSupervisor(name: string) {
+      const n = normStr(name);
+      return allSups.find(s =>
+        normStr(s.name) === n ||
+        normStr(s.nameKey ?? "") === n
+      ) ?? allSups.find(s => {
+        const sn = normStr(s.name).split(" ");
+        const tn = n.split(" ");
+        const shared = sn.filter(w => tn.includes(w)).length;
+        return shared >= 2;
+      });
+    }
+
+    function findSchool(name: string) {
+      const n = normStr(name);
+      return allSchools.find(s =>
+        normStr(s.name) === n ||
+        normStr(s.nameKey ?? "") === n
+      ) ?? allSchools.find(s => {
+        const sn = normStr(s.name).split(" ");
+        const tn = n.split(" ");
+        const shared = sn.filter(w => tn.includes(w)).length;
+        return shared >= Math.max(2, Math.floor(tn.length / 2));
+      });
+    }
+
+    // استنتاج المرحلة والجنس من اسم المدرسة
+    function deriveLevel(name: string): string {
+      if (name.includes("الابتدائية") || name.includes("ابتدائية") || name.includes("الإبتدائية") || name.includes("الابتدائيه")) return "ابتدائي";
+      if (name.includes("الإعدادية") || name.includes("إعدادية") || name.includes("اعدادية") || name.includes("الاعدادية")) return "إعدادي";
+      if (name.includes("الثانوية") || name.includes("ثانوية")) return "ثانوي";
+      if (name.includes("النموذجية") || name.includes("نموذجية")) return "نموذجي";
+      if (name.includes("المشتركة") || name.includes("مشتركة")) return "مشترك";
+      if (name.includes("تخصصية") || name.includes("تخصصي")) return "تخصصي";
+      return "";
+    }
+    function deriveGender(name: string, supGender: "male" | "female"): "male" | "female" {
+      if (name.includes("للبنات") || name.includes("البنات")) return "female";
+      if (name.includes("للبنين") || name.includes("البنين")) return "male";
+      return supGender;
+    }
+
+    // 3) استيراد التوزيع الجديد — مع إنشاء المدارس الناقصة تلقائياً
+    let inserted = 0;
+    let createdSchools = 0;
+    const errors: string[] = [];
+
+    for (const item of args.assignments) {
+      const sup = findSupervisor(item.supervisorName);
+      if (!sup) {
+        errors.push(`موجه غير موجود: ${item.supervisorName}`);
+        continue;
+      }
+      for (const schoolName of item.schools) {
+        let school = findSchool(schoolName);
+        // إنشاء المدرسة إذا لم تكن موجودة
+        if (!school) {
+          const newId = await ctx.db.insert("schools", {
+            name: schoolName,
+            nameKey: schoolName,
+            level: deriveLevel(schoolName),
+            gender: deriveGender(schoolName, sup.gender),
+            isActive: true,
+          });
+          const created = await ctx.db.get(newId);
+          if (created) {
+            school = created;
+            allSchools.push(created);
+            createdSchools++;
+          }
+        }
+        if (!school) continue;
+        await ctx.db.insert("assignments", {
+          schoolId: school._id,
+          supervisorId: sup._id,
+          academicYear: args.academicYear,
+          assignedAt: Date.now(),
+        });
+        inserted++;
+      }
+    }
+
+    return {
+      deleted: existing.length,
+      inserted,
+      createdSchools,
+      errors,
+    };
+  },
+});
+
 // نسخ كل توزيعات سنة إلى سنة جديدة (بداية كل عام دراسي)
 export const copyYearAssignments = mutation({
   args: {

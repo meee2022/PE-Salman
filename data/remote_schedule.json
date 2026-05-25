@@ -1,0 +1,821 @@
+[
+  {
+    "name": "فيصل عبدالعزيز البدر",
+    "shortKey": "فيصل البدر",
+    "schoolsTotal": 10,
+    "days": {
+      "sunday": [
+        {
+          "school": "روضة راشد المشتركة",
+          "count": 1
+        },
+        {
+          "school": "الكرعانة المشتركة",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "عبدالله بن رواحة ب",
+          "count": 1
+        },
+        {
+          "school": "الرازي ع",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "معاذ بن جبل ب -",
+          "count": 1
+        },
+        {
+          "school": "احمد بن راشد المريخي",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "السيلية ع",
+          "count": 1
+        },
+        {
+          "school": "قطر ب",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "ابو بكر الصديق ع",
+          "count": 1
+        },
+        {
+          "school": "التربية السمعية",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "أحمد يوسف غريب أبوالفين",
+    "shortKey": "احمد ابوالفين",
+    "schoolsTotal": 10,
+    "days": {
+      "sunday": [
+        {
+          "school": "الشمال ب",
+          "count": 1
+        },
+        {
+          "school": "الشمال ث",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "الزبير بن العوام ب",
+          "count": 1
+        },
+        {
+          "school": "عبدالرحمن بن عوف ع",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "عمر بن الخطاب ث",
+          "count": 1
+        },
+        {
+          "school": "محمد المانع ث",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "دخان م",
+          "count": 1
+        },
+        {
+          "school": "عبدالرحمن بن جاسم",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "عبدالله بن جاسم",
+          "count": 1
+        },
+        {
+          "school": "محمد بن جاسم",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "علي حمد محمد الكبيسي",
+    "shortKey": "علي الكبيسي",
+    "schoolsTotal": 8,
+    "days": {
+      "sunday": [
+        {
+          "school": "طلحة بن عبيد الله ع",
+          "count": 1
+        },
+        {
+          "school": "الوجبة/ب",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "عبدالله المسند ث",
+          "count": 1
+        },
+        {
+          "school": "عبدالله بن تركي ب",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "احمد منصور ب",
+          "count": 0
+        },
+        {
+          "school": "حمزة بن عبدالمطلب",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "المعهد الديني",
+          "count": 1
+        },
+        {
+          "school": "الشمال الاعدادية",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "سميسمة ع",
+          "count": 1
+        },
+        {
+          "school": "الزبارة المشتركة",
+          "count": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "أحمد صالح أحمد الرئيسي",
+    "shortKey": "احمد الرئيسي",
+    "schoolsTotal": 11,
+    "days": {
+      "sunday": [
+        {
+          "school": "عمرو بن العاص",
+          "count": 2
+        },
+        {
+          "school": "الاحنف بن قيس",
+          "count": 2
+        },
+        {
+          "school": "محمد بن عبدالوهاب ث",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "الثمامة ب",
+          "count": 3
+        },
+        {
+          "school": "ابي عبيدة ع",
+          "count": 3
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "علي بن ابي طالب ع",
+          "count": 2
+        },
+        {
+          "school": "سعيد بن زيد ع",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "ابن سيناء ث",
+          "count": 2
+        },
+        {
+          "school": "الوكرة ث",
+          "count": 2
+        }
+      ],
+      "thursday": [
+        {
+          "school": "عمر بن الخطاب ع",
+          "count": 1
+        },
+        {
+          "school": "اسامة بن زيد ع",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "مبارك عبدالعزيز ابراهيم المالك",
+    "shortKey": "مبارك المالك",
+    "schoolsTotal": 10,
+    "days": {
+      "sunday": [
+        {
+          "school": "ابن خلدون ع",
+          "count": 1
+        },
+        {
+          "school": "الامام الشافعي ع",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "خليفة الثانوية",
+          "count": 1
+        },
+        {
+          "school": "اليرموك",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "صلاح الدين ع",
+          "count": 2
+        },
+        {
+          "school": "ابن تيمية ث",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "ام صلال ث",
+          "count": 1
+        },
+        {
+          "school": "ام القرى ب",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "جاسم بن حمد ث",
+          "count": 0
+        },
+        {
+          "school": "احمد بن حنبل ث",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "حنان خميس حران العمور الشمري",
+    "shortKey": "حنان الشمري",
+    "schoolsTotal": 7,
+    "days": {
+      "sunday": [
+        {
+          "school": "السلام ن",
+          "count": 1
+        },
+        {
+          "school": "الخليج العربي",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "امنه بنت وهب ع",
+          "count": 1
+        },
+        {
+          "school": "الشيماء ث",
+          "count": 1
+        },
+        {
+          "school": "امنة بنت وهب",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "الرسالة ث",
+          "count": 1
+        },
+        {
+          "school": "المنار",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "العبيب ب",
+          "count": 0
+        },
+        {
+          "school": "روضة بنت محمد ث",
+          "count": 0
+        }
+      ],
+      "thursday": [
+        {
+          "school": "الذخيرة ن",
+          "count": 0
+        },
+        {
+          "school": "سودة بنت زمعه ع",
+          "count": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "عائشة حمد محمد الشقيري المهندي",
+    "shortKey": "عائشه المهندي",
+    "schoolsTotal": 11,
+    "days": {
+      "sunday": [
+        {
+          "school": "هند بنت عمرو",
+          "count": 1
+        },
+        {
+          "school": "/الشحانية ن",
+          "count": 1
+        },
+        {
+          "school": "/الأقصى ع",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "غرناطة /",
+          "count": 1
+        },
+        {
+          "school": "ابي حنيفة",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "عائشه بنت أبي بكر ث",
+          "count": 1
+        },
+        {
+          "school": "/ الثمامة ث",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "الخوارزمي ب/",
+          "count": 1
+        },
+        {
+          "school": "فاطمه بنت الوليد ع",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "مسيعيد المشتركة",
+          "count": 1
+        },
+        {
+          "school": "رملة بنت ابي سفيان",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "هيام صلاح عبدالقادر الغرابات",
+    "shortKey": "هيام الغرابات",
+    "schoolsTotal": 15,
+    "days": {
+      "sunday": [
+        {
+          "school": "أم سلمةب /",
+          "count": 1
+        },
+        {
+          "school": "سميةب/خليفة ن",
+          "count": 2
+        },
+        {
+          "school": "/زبيدة ث",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "الرفاع/",
+          "count": 1
+        },
+        {
+          "school": "المثنى",
+          "count": 1
+        },
+        {
+          "school": "المرخية",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "الايمان ث/",
+          "count": 1
+        },
+        {
+          "school": "الثمامة ب/",
+          "count": 1
+        },
+        {
+          "school": "عبدالله بن الزبير ن",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "موزة بنت محمد ع",
+          "count": 2
+        },
+        {
+          "school": "/طيبة ب",
+          "count": 1
+        },
+        {
+          "school": "المثنى",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "ام سلمة ب",
+          "count": 1
+        },
+        {
+          "school": "هاجر",
+          "count": 2
+        },
+        {
+          "school": "نسيبة",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "لينا سعيد محمد زوكاري",
+    "shortKey": "لينا زوكاري",
+    "schoolsTotal": 10,
+    "days": {
+      "sunday": [
+        {
+          "school": "ميمونة ب",
+          "count": 2
+        },
+        {
+          "school": "المشاف ب",
+          "count": 2
+        }
+      ],
+      "monday": [
+        {
+          "school": "الوفاء / ن",
+          "count": 2
+        },
+        {
+          "school": "فاطمة الزهراءع",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "آمنة بنت وهب /ث",
+          "count": 2
+        },
+        {
+          "school": "رقية /ع",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "موزة بنت محمد/ب",
+          "count": 1
+        },
+        {
+          "school": "الاسراء /ب",
+          "count": 2
+        }
+      ],
+      "thursday": [
+        {
+          "school": "صفية ب",
+          "count": 1
+        },
+        {
+          "school": "عثمان بن عفان ن",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "موزة عبدالله على محمد الحرمي",
+    "shortKey": "موزه الحرمي",
+    "schoolsTotal": 10,
+    "days": {
+      "sunday": [
+        {
+          "school": "الخريطيات ب",
+          "count": 1
+        },
+        {
+          "school": "الكعبان المشتركه",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "الخور ث",
+          "count": 1
+        },
+        {
+          "school": "امنه بنت الارقم ث",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "عبدالله بن زيد ن +",
+          "count": 1
+        },
+        {
+          "school": "الفلاح ب",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "ام العمد ن +",
+          "count": 1
+        },
+        {
+          "school": "الوجبه ع",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "الخور ن",
+          "count": 1
+        },
+        {
+          "school": "القادسية ن",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "د.فجر محمد صباح الكبيسي",
+    "shortKey": "فجر الكبيسي",
+    "schoolsTotal": 13,
+    "days": {
+      "sunday": [
+        {
+          "school": "الخور ب",
+          "count": 2
+        },
+        {
+          "school": "معيذر ث",
+          "count": 1
+        },
+        {
+          "school": "هند بنت عتبة ع",
+          "count": 1
+        }
+      ],
+      "monday": [
+        {
+          "school": "الخنساء ب",
+          "count": 1
+        },
+        {
+          "school": "أم هاني ب",
+          "count": 1
+        },
+        {
+          "school": "الكوثر ث",
+          "count": 1
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "هند بنت عتبة ع",
+          "count": 1
+        },
+        {
+          "school": "برزان ع",
+          "count": 1
+        },
+        {
+          "school": "الوكرة ع",
+          "count": 1
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "الكرعانه المشتركة",
+          "count": 1
+        },
+        {
+          "school": "روضة راشد المشتركة",
+          "count": 1
+        }
+      ],
+      "thursday": [
+        {
+          "school": "دخان المشتركة",
+          "count": 0
+        },
+        {
+          "school": "قطر التقنية شمال",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "ندا يعقوب احمد على البلوشى",
+    "shortKey": "ندا البلوشي",
+    "schoolsTotal": 8,
+    "days": {
+      "sunday": [],
+      "monday": [
+        {
+          "school": "الوفاء / ن",
+          "count": 0
+        },
+        {
+          "school": "فاطمة الزهراءع",
+          "count": 0
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "عبدالله بن زيد ن +",
+          "count": 0
+        },
+        {
+          "school": "الفلاح ب",
+          "count": 0
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "موزة بنت محمد ع",
+          "count": 0
+        },
+        {
+          "school": "/طيبة ب",
+          "count": 0
+        }
+      ],
+      "thursday": [
+        {
+          "school": "دخان المشتركة",
+          "count": 0
+        },
+        {
+          "school": "قطر التقنية شمال",
+          "count": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "ندى صالح أحمد اليزيدي اليافعي",
+    "shortKey": "ندي اليافعي",
+    "schoolsTotal": 9,
+    "days": {
+      "sunday": [],
+      "monday": [
+        {
+          "school": "امنه بنت وهب ع",
+          "count": 0
+        },
+        {
+          "school": "الشيماء ث",
+          "count": 0
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "الايمان ث/",
+          "count": 0
+        },
+        {
+          "school": "الثمامة ب/",
+          "count": 0
+        },
+        {
+          "school": "عبدالله بن الزبير ن",
+          "count": 0
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "الكرعانه المشتركة",
+          "count": 0
+        },
+        {
+          "school": "روضة راشد المشتركة",
+          "count": 0
+        }
+      ],
+      "thursday": [
+        {
+          "school": "الخور ن",
+          "count": 0
+        },
+        {
+          "school": "القادسية ن",
+          "count": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "لطيفة جاسم علي بو جسوم البدر",
+    "shortKey": "لطيفه البدر",
+    "schoolsTotal": 8,
+    "days": {
+      "sunday": [],
+      "monday": [
+        {
+          "school": "الخور ث",
+          "count": 0
+        },
+        {
+          "school": "امنه بنت الارقم ث",
+          "count": 0
+        }
+      ],
+      "tuesday": [
+        {
+          "school": "عائشه بنت أبي بكر ث",
+          "count": 0
+        },
+        {
+          "school": "/ الثمامة ث",
+          "count": 0
+        }
+      ],
+      "wednesday": [
+        {
+          "school": "موزة بنت محمد/ب",
+          "count": 0
+        },
+        {
+          "school": "الاسراء /ب",
+          "count": 0
+        }
+      ],
+      "thursday": [
+        {
+          "school": "دخان المشتركة",
+          "count": 0
+        },
+        {
+          "school": "قطر التقنية شمال",
+          "count": 0
+        }
+      ]
+    }
+  }
+]

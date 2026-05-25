@@ -23,9 +23,34 @@ export const list = query({
     schools = schools.filter((s) => s.isActive);
     if (args.gender) schools = schools.filter((s) => s.gender === args.gender);
 
-    if (!args.academicYear) return schools;
+    // حساب عدد المعلمين والمنسقين فعلياً من جدول المعلمين (مطابقة بالاسم الكامل)
+    const allTeachers = await ctx.db.query("teachers").collect();
+    function normStr(s: string) {
+      return (s ?? "").replace(/\s+/g, " ").trim()
+        .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي")
+        .replace(/ة/g, "ه").replace(/[ً-ْٰ]/g, "");
+    }
+    // فهرس المعلمين حسب اسم المدرسة الكامل المنقّح
+    const teacherCounts = new Map<string, { teachers: number; coordinators: number }>();
+    for (const t of allTeachers) {
+      const key = normStr(t.schoolName);
+      const rec = teacherCounts.get(key) ?? { teachers: 0, coordinators: 0 };
+      if ((t.jobTitle ?? "").startsWith("منسق")) rec.coordinators++;
+      else rec.teachers++;
+      teacherCounts.set(key, rec);
+    }
+    function countFor(school: { name: string }) {
+      return teacherCounts.get(normStr(school.name)) ?? { teachers: 0, coordinators: 0 };
+    }
 
-    // الحاق الموجه الحالي لكل مدرسة
+    if (!args.academicYear) {
+      return schools.map((s) => {
+        const c = countFor(s);
+        return { ...s, teachers: c.teachers, coordinators: c.coordinators };
+      });
+    }
+
+    // الحاق الموجه الحالي + عدد المعلمين لكل مدرسة
     const assignments = await ctx.db
       .query("assignments")
       .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear!))
@@ -37,7 +62,8 @@ export const list = query({
       schools.map(async (school) => {
         const supId = assignMap.get(school._id);
         const supervisor = supId ? await ctx.db.get(supId) : null;
-        return { ...school, supervisor: supervisor ?? null };
+        const c = countFor(school);
+        return { ...school, supervisor: supervisor ?? null, teachers: c.teachers, coordinators: c.coordinators };
       })
     );
   },
@@ -146,5 +172,83 @@ export const remove = mutation({
     for (const a of asg) await ctx.db.delete(a._id);
     await ctx.db.delete(args.id);
     await logAudit(ctx, admin, "delete", "school", args.id, `حذف مدرسة: ${sc?.name ?? ""}`);
+  },
+});
+
+// ── استيراد كامل للمدارس: upsert + إخفاء غير المُدرج ────────────────
+export const bulkSeedSchools = mutation({
+  args: {
+    schools: v.array(v.object({
+      name: v.string(),
+      nameKey: v.string(),
+      level: v.optional(v.string()),
+      gender: v.union(v.literal("male"), v.literal("female")),
+    })),
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+
+    function normStr(s: string) {
+      return s.replace(/\s+/g, " ").trim()
+        .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي")
+        .replace(/ة/g, "ه").replace(/[ً-ْٰ]/g, "");
+    }
+
+    const allExisting = await ctx.db.query("schools").collect();
+    const wantedNames = new Set(args.schools.map(s => normStr(s.name)));
+
+    let inserted = 0, updated = 0, hidden = 0;
+
+    // 1) upsert كل مدرسة في القائمة
+    for (const sch of args.schools) {
+      const n = normStr(sch.name);
+      const existing = allExisting.find(e => normStr(e.name) === n);
+      const data = {
+        name: sch.name,
+        nameKey: sch.nameKey,
+        level: sch.level,
+        gender: sch.gender,
+        isActive: true,
+      };
+      if (existing) {
+        await ctx.db.patch(existing._id, data);
+        updated++;
+      } else {
+        await ctx.db.insert("schools", data);
+        inserted++;
+      }
+    }
+
+    // 2) إخفاء أي مدرسة نشطة غير موجودة في القائمة
+    for (const e of allExisting) {
+      if (!wantedNames.has(normStr(e.name)) && e.isActive) {
+        await ctx.db.patch(e._id, { isActive: false });
+        hidden++;
+      }
+    }
+
+    return { inserted, updated, hidden };
+  },
+});
+
+// ── إخفاء المدارس غير الموجودة في قائمة الأسماء ─────────────────────
+export const deactivateUnlisted = mutation({
+  args: {
+    activeNames: v.array(v.string()),
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminMutation(ctx, args.token);
+    const activeSet = new Set(args.activeNames);
+    const allSchools = await ctx.db.query("schools").collect();
+    let hidden = 0;
+    for (const school of allSchools) {
+      if (!activeSet.has(school.name) && school.isActive) {
+        await ctx.db.patch(school._id, { isActive: false });
+        hidden++;
+      }
+    }
+    return { hidden };
   },
 });

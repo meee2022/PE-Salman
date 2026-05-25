@@ -1,15 +1,18 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface Props {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
   action?: React.ReactNode;
+  back?: { href: string; label: string };
 }
 
-export function PageHeader({ title, subtitle, icon, action }: Props) {
+export function PageHeader({ title, subtitle, icon, action, back }: Props) {
   const reduce = useReducedMotion();
   return (
     <motion.div
@@ -21,6 +24,13 @@ export function PageHeader({ title, subtitle, icon, action }: Props) {
       <div className="pattern-arabesque absolute inset-0 opacity-[0.6] pointer-events-none" />
       {/* وهج ذهبي */}
       <div className="absolute -left-10 -top-10 w-40 h-40 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
+
+      {back && (
+        <Link href={back.href}
+          className="relative inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 transition-all w-fit">
+          <ArrowRight size={14} /> {back.label}
+        </Link>
+      )}
 
       <div className="relative flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">

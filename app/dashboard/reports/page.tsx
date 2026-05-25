@@ -20,7 +20,7 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/ui/Motion";
 import { motion } from "framer-motion";
 import {
   Trophy, Medal, Users, School, ClipboardCheck,
-  TrendingUp, Star, Award, Eye,
+  TrendingUp, Star, Award, Eye, ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { useActiveYear } from "@/hooks/useActiveYear";
@@ -178,6 +178,28 @@ export default function ReportsPage() {
           />
         </StaggerItem>
       </Stagger>
+
+      {/* ① بوابة التقارير التفصيلية ───────────────────────────────── */}
+      <FadeIn delay={0.02}>
+        <Link
+          href="/dashboard/reports/field-visits"
+          className="group card-luxurious p-4 sm:p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+        >
+          <div className="icon-orb !w-12 !h-12 shrink-0 bg-gradient-to-br from-[#DFC48E] to-[#A8853A] text-white shadow-md shadow-gold/20">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-extrabold text-[#2A1418] text-sm leading-snug">حصر الزيارات الميدانية</p>
+            <p className="text-xs text-[#8A7A72] font-semibold mt-0.5 leading-relaxed">
+              جميع الاستمارات والزيارات مجمّعة حسب الموجه — مع فلتر النوع والحالة وخيار الطباعة PDF
+            </p>
+          </div>
+          <ChevronLeft size={18} className="text-gold-dark group-hover:text-primary transition-colors shrink-0" />
+        </Link>
+      </FadeIn>
 
       {/* ② Champion Section ─────────────────────────────────────── */}
       <FadeIn>

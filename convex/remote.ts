@@ -12,17 +12,31 @@ const DAYS = v.object({
   wednesday: v.array(DAY_SLOT), thursday: v.array(DAY_SLOT),
 });
 
-// ── استعلامات (للأدمن/المشاهد) ───────────────────────────────────
+// ── استعلامات — المدير يرى الكل، الموجه يرى بياناته فقط ──────────
 export const coverage = query({
   args: { academicYear: v.string(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx, args.token);
-    if (!canSeeAll(user)) return [];
-    const rows = await ctx.db
-      .query("remoteCoverage")
-      .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
-      .collect();
-    return Promise.all(rows.map(async (r) => ({ ...r, supervisor: await ctx.db.get(r.supervisorId) })));
+    if (!user) return [];
+    if (canSeeAll(user)) {
+      const rows = await ctx.db
+        .query("remoteCoverage")
+        .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
+        .collect();
+      return Promise.all(rows.map(async (r) => ({ ...r, supervisor: await ctx.db.get(r.supervisorId) })));
+    }
+    // موجه: يرى بياناته هو فقط
+    if (user.role === "supervisor" && user.supervisorId) {
+      const row = await ctx.db
+        .query("remoteCoverage")
+        .withIndex("by_supervisor_year", (q) =>
+          q.eq("supervisorId", user.supervisorId!).eq("academicYear", args.academicYear)
+        )
+        .first();
+      if (!row) return [];
+      return [{ ...row, supervisor: await ctx.db.get(row.supervisorId) }];
+    }
+    return [];
   },
 });
 
@@ -30,12 +44,26 @@ export const schedule = query({
   args: { academicYear: v.string(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx, args.token);
-    if (!canSeeAll(user)) return [];
-    const rows = await ctx.db
-      .query("remoteSchedule")
-      .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
-      .collect();
-    return Promise.all(rows.map(async (r) => ({ ...r, supervisor: await ctx.db.get(r.supervisorId) })));
+    if (!user) return [];
+    if (canSeeAll(user)) {
+      const rows = await ctx.db
+        .query("remoteSchedule")
+        .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
+        .collect();
+      return Promise.all(rows.map(async (r) => ({ ...r, supervisor: await ctx.db.get(r.supervisorId) })));
+    }
+    // موجه: يرى جدوله هو فقط
+    if (user.role === "supervisor" && user.supervisorId) {
+      const row = await ctx.db
+        .query("remoteSchedule")
+        .withIndex("by_supervisor_year", (q) =>
+          q.eq("supervisorId", user.supervisorId!).eq("academicYear", args.academicYear)
+        )
+        .first();
+      if (!row) return [];
+      return [{ ...row, supervisor: await ctx.db.get(row.supervisorId) }];
+    }
+    return [];
   },
 });
 
