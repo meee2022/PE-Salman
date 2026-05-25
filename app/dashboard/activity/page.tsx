@@ -499,7 +499,7 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                         }`}
                         style={{
                           borderBottom: "2px solid var(--gold)",
-                          borderLeft: showSep ? "2px solid #C9A96E" : undefined,
+                          borderRight: showSep ? "2px solid #C9A96E" : undefined,
                         }}
                       >
                         {showSep && (
@@ -549,7 +549,7 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                       return (
                         <td key={d.ds}
                           className={`p-0.5 text-center transition-all ${d.weekend ? "bg-stone-50/40" : ""}`}
-                          style={{ borderLeft: isNewWeek ? "2px solid rgba(201,169,110,0.4)" : undefined }}
+                          style={{ borderRight: isNewWeek ? "2px solid rgba(201,169,110,0.4)" : undefined }}
                         >
                           <button
                             disabled={bulkMode || readOnly}
