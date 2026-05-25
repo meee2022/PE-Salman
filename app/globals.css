@@ -348,6 +348,13 @@ body {
 
   /* تكرار ترويسة الجدول في كل صفحة */
   thead { display: table-header-group; }
+
+  /* ملف الموجه: تقليص شبكة الأعمدة لعمود واحد عند الطباعة */
+  .lg\:grid-cols-3 { grid-template-columns: 1fr !important; }
+  .lg\:grid-cols-4 { grid-template-columns: 1fr 1fr !important; }
+
+  /* إظهار الجدول الشهري كاملاً دون قطع */
+  .monthly-activity-table { page-break-inside: avoid; }
 }
 
 /* ── CSS Animations للـ Landing Page (بديل framer-motion) ── */

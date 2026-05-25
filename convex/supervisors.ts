@@ -121,6 +121,36 @@ export const detail = query({
     const liveFormsCount = liveFormsList.length;
     const liveFormsSubmitted = liveFormsList.filter((f) => f.status === "submitted").length;
 
+    // سجلات النشاط اليومية للعام الدراسي
+    const activityLogsList = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_supervisor_year", (q) =>
+        q.eq("supervisorId", args.id).eq("academicYear", args.academicYear))
+      .collect();
+
+    // آخر زيارة لكل مدرسة (schoolId → آخر تاريخ VS/CL)
+    const schoolLastVisit: Record<string, string> = {};
+    for (const log of activityLogsList) {
+      if (log.schoolId && (log.code === "VS" || log.code === "CL")) {
+        const k = log.schoolId as string;
+        if (!schoolLastVisit[k] || log.date > schoolLastVisit[k]) {
+          schoolLastVisit[k] = log.date;
+        }
+      }
+    }
+
+    // ملخص النشاط الشهري (شهر → أكواد → عدد)
+    const monthlyMap = new Map<string, Record<string, number>>();
+    for (const log of activityLogsList) {
+      const month = log.date.slice(0, 7); // "2025-11"
+      if (!monthlyMap.has(month)) monthlyMap.set(month, {});
+      const m = monthlyMap.get(month)!;
+      m[log.code] = (m[log.code] ?? 0) + 1;
+    }
+    const monthlyActivity = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, codes]) => ({ month, ...codes } as { month: string } & Record<string, number>));
+
     return {
       supervisor,
       coverage,
@@ -130,6 +160,8 @@ export const detail = query({
       liveFormsList,
       liveFormsCount,
       liveFormsSubmitted,
+      schoolLastVisit,
+      monthlyActivity,
     };
   },
 });
