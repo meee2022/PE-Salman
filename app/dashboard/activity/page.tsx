@@ -484,20 +484,41 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                     </label>
                   ) : "الموجه التربوي"}
                 </th>
-                {days.map(d => (
-                  <th key={d.ds}
-                    className={`px-1 py-2 text-center ${cellW} ${
-                      d.weekend
-                        ? "bg-[#3A0B14] text-white/45"
-                        : "bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] text-[#EBD9B4]"
-                    }`}
-                    style={{ borderBottom: "2px solid var(--gold)" }}
-                  >
-                    <div className="text-[9px] font-extrabold opacity-80">{d.wd}</div>
-                    <div className="text-xs font-extrabold mt-0.5">{d.dayNum}</div>
-                    <div className="text-[8px] opacity-50">{AR_MONTHS[d.monthIdx].slice(0,3)}</div>
-                  </th>
-                ))}
+                {(() => {
+                  let weekNum = 0;
+                  return days.map((d, di) => {
+                    const isNewWeek = d.wd === "أحد";
+                    if (isNewWeek) weekNum++;
+                    const showSep = isNewWeek && di > 0 && mode === "month";
+                    return (
+                      <th key={d.ds}
+                        className={`px-1 py-2 text-center ${cellW} ${
+                          d.weekend
+                            ? "bg-[#3A0B14] text-white/45"
+                            : "bg-gradient-to-b from-[#5C1523] to-[#4A0F1B] text-[#EBD9B4]"
+                        }`}
+                        style={{
+                          borderBottom: "2px solid var(--gold)",
+                          borderLeft: showSep ? "2px solid #C9A96E" : undefined,
+                        }}
+                      >
+                        {showSep && (
+                          <div className="text-[7px] font-black text-gold/80 -mt-0.5 mb-0.5 whitespace-nowrap">
+                            أسبوع {weekNum}
+                          </div>
+                        )}
+                        {!showSep && isNewWeek && mode === "month" && di === 0 && (
+                          <div className="text-[7px] font-black text-gold/80 -mt-0.5 mb-0.5 whitespace-nowrap">
+                            أسبوع {weekNum}
+                          </div>
+                        )}
+                        <div className="text-[9px] font-extrabold opacity-80">{d.wd}</div>
+                        <div className="text-xs font-extrabold mt-0.5">{d.dayNum}</div>
+                        <div className="text-[8px] opacity-50">{AR_MONTHS[d.monthIdx].slice(0,3)}</div>
+                      </th>
+                    );
+                  });
+                })()}
               </tr>
             </thead>
             <tbody>
@@ -516,7 +537,8 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                       ) : sup.name}
                     </td>
 
-                    {days.map(d => {
+                    {days.map((d, di) => {
+                      const isNewWeek = d.wd === "أحد" && di > 0 && mode === "month";
                       // ابحث في كل IDs: الأصل والمكررات (لو بياناته محفوظة تحت ID قديم)
                       const entry = supAllIds.reduce<LogEntry | undefined>(
                         (found, id) => found ?? logMap.get(`${id}_${d.ds}`),
@@ -525,7 +547,10 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                       const meta = entry ? CODE_MAP[entry.code] : null;
                       const hasNote = !!entry?.notes && entry.notes !== meta?.label;
                       return (
-                        <td key={d.ds} className={`p-0.5 text-center transition-all ${d.weekend ? "bg-stone-50/40" : ""}`}>
+                        <td key={d.ds}
+                          className={`p-0.5 text-center transition-all ${d.weekend ? "bg-stone-50/40" : ""}`}
+                          style={{ borderLeft: isNewWeek ? "2px solid rgba(201,169,110,0.4)" : undefined }}
+                        >
                           <button
                             disabled={bulkMode || readOnly}
                             onClick={readOnly ? undefined : () => {
