@@ -106,12 +106,20 @@ export default function CoveragePage() {
 
       {/* ── تحليل ذكي بالذكاء الاصطناعي ── */}
       {isAdmin && (
-        <AiInsightPanel
-          endpoint="/api/ai-analysis"
-          title="التحليل الذكي للأداء"
-          buttonLabel="حلّل أداء القسم بالذكاء الاصطناعي"
-          hint="ملخص تنفيذي وتوصيات لكل موجّه — من بيانات التغطية الحقيقية"
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <AiInsightPanel
+            endpoint="/api/ai-analysis"
+            title="التحليل الذكي للأداء"
+            buttonLabel="حلّل أداء القسم بالذكاء الاصطناعي"
+            hint="ملخص تنفيذي وتوصيات لكل موجّه — من بيانات التغطية الحقيقية"
+          />
+          <AiInsightPanel
+            endpoint="/api/ai-anomalies"
+            title="كشف الشذوذ والتنبيهات الذكية"
+            buttonLabel="افحص البيانات بحثًا عن شذوذ"
+            hint="يرصد التغطية الشاذة والتناقضات وأخطاء الإدخال المحتملة"
+          />
+        </div>
       )}
 
       {/* الرسوم البيانية الإحصائية */}

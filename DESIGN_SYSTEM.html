@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظام التصميم — التوجيه التربوي للتربية البدنية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ════════════ متغيّرات الهوية (انسخها كما هي) ════════════ */
+  :root {
+    --primary: #5C1523;        /* العنابي الأساسي */
+    --primary-dark: #4A0F1B;   /* عنابي غامق */
+    --primary-light: #7A1E30;  /* عنابي فاتح */
+    --gold: #C9A96E;           /* الذهبي الأساسي */
+    --gold-light: #DFC48E;     /* ذهبي فاتح */
+    --gold-dark: #A8853A;      /* ذهبي غامق */
+    --cream: #FCF9F2;          /* الخلفية الكريمية */
+    --card-2: #F5EDD8;         /* سطح بطاقة دافئ */
+    --ink: #2A1418;            /* لون النص الأساسي */
+    --muted: #8A7A72;          /* نص ثانوي */
+    --text-strong: #1C1008;
+    --text-soft: #7A6A58;
+  }
+
+  * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+  html { direction: rtl; }
+  body {
+    margin: 0;
+    background-color: var(--cream);
+    color: var(--ink);
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(201,169,110,0.06) 0%, transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(92,21,35,0.04) 0%, transparent 40%);
+    background-attachment: fixed;
+    line-height: 1.8;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ── ترويسة الصفحة ── */
+  .page-hero {
+    background: radial-gradient(circle at 0% 0%, rgba(201,169,110,0.15) 0%, transparent 50%),
+                linear-gradient(135deg, #4A0F1B 0%, #5C1523 50%, #3B0A14 100%);
+    color: #fff; padding: 56px 20px; margin-bottom: 48px; position: relative; overflow: hidden;
+  }
+  .page-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(201,169,110,0.05) 1px, transparent 1px),
+                linear-gradient(rgba(201,169,110,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+  }
+  .page-hero .inner { max-width: 1100px; margin: 0 auto; position: relative; }
+  .page-hero h1 { font-size: 34px; font-weight: 900; margin: 0 0 10px; }
+  .page-hero h1 .gold { color: var(--gold); }
+  .page-hero p { color: rgba(255,255,255,0.72); font-size: 15px; max-width: 640px; margin: 0; }
+  .page-hero .chip { display:inline-flex; gap:6px; align-items:center; background: rgba(255,255,255,0.1); border:1px solid rgba(201,169,110,0.4); color: var(--gold-light); padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 18px; }
+
+  /* ── أقسام التوثيق ── */
+  section { margin-bottom: 56px; }
+  .sec-head { display:flex; align-items:center; gap:12px; margin-bottom: 8px; }
+  .sec-num { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:14px; background: linear-gradient(135deg, var(--primary-light), var(--primary)); color: var(--gold); font-weight:900; font-size:15px; box-shadow: 0 6px 16px -6px rgba(92,21,35,0.5); }
+  h2.sec-title { font-size: 24px; font-weight: 900; color: var(--primary); margin: 0; border-right: 4px solid var(--gold); padding-right: 12px; }
+  .sec-desc { color: var(--text-soft); font-size: 14px; margin: 4px 0 22px; }
+
+  .demo {
+    background: #fff; border-radius: 24px; border: 1px solid rgba(0,0,0,0.04); padding: 28px;
+    box-shadow: 0 1px 3px rgba(42,20,24,0.02), 0 6px 16px -4px rgba(42,20,24,0.04), 0 20px 40px -12px rgba(42,20,24,0.08);
+    margin-bottom: 14px;
+  }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 760px) { .g2,.g3,.g4 { grid-template-columns: 1fr; } }
+
+  /* ── كتلة الكود ── */
+  pre { background: #2A1418; color: #F5EDD8; border-radius: 16px; padding: 18px 20px; overflow-x:auto; font-size: 12.5px; line-height: 1.7; margin: 0; direction: ltr; text-align: left; }
+  pre code { font-family: 'Consolas','Monaco',monospace; }
+  .code-label { font-size: 11px; font-weight: 800; color: var(--text-soft); margin: 12px 0 6px; letter-spacing: .5px; }
+
+  /* ════════════ مكوّنات الهوية الفعلية (مأخوذة من globals.css) ════════════ */
+  .icon-orb { display:flex; align-items:center; justify-content:center; border-radius:16px; flex-shrink:0; width:48px; height:48px; }
+  .card { background:#fff; border-radius:16px; border:1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 2px rgba(42,20,24,0.04), 0 8px 24px -12px rgba(42,20,24,0.10); transition: box-shadow .25s ease, transform .25s ease; padding: 20px; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(42,20,24,0.06), 0 18px 40px -16px rgba(92,21,35,0.22); }
+  .card-luxurious { background:#fff; border-radius:24px; border:1px solid rgba(0,0,0,0.03); position:relative; box-shadow: 0 1px 3px rgba(42,20,24,0.02), 0 6px 16px -4px rgba(42,20,24,0.04), 0 20px 40px -12px rgba(42,20,24,0.08); transition: all .3s cubic-bezier(.16,1,.3,1); padding: 24px; }
+  .card-luxurious-hover:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(92,21,35,0.03), 0 20px 48px -10px rgba(92,21,35,0.16), 0 0 0 1px rgba(201,169,110,0.25); }
+  .module-card { background:#fff; border-radius:16px; border:1px solid rgba(0,0,0,0.04); padding:16px; display:flex; align-items:center; gap:12px; box-shadow: 0 1px 2px rgba(28,16,8,0.04), 0 10px 26px -16px rgba(28,16,8,0.12); transition: transform .2s ease, box-shadow .2s ease; }
+  .module-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(28,16,8,0.06), 0 18px 38px -18px rgba(92,21,35,0.22); }
+
+  .pill { display:inline-flex; align-items:center; gap:4px; padding: 4px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-complete  { background:#ecfdf5; color:#047857; box-shadow: inset 0 0 0 1px rgba(167,243,208,0.7); }
+  .badge-excellent { background:#f0f9ff; color:#0369a1; box-shadow: inset 0 0 0 1px rgba(186,230,253,0.7); }
+  .badge-champion  { background: linear-gradient(135deg,#FBF1D9,#F4E2B8); color:#8a6a1f; box-shadow: inset 0 0 0 1px #e8cf94; }
+  .badge-near      { background:#fff7ed; color:#c2410c; box-shadow: inset 0 0 0 1px rgba(254,215,170,0.7); }
+
+  .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600; color:#fff; border:none; cursor:pointer; background: linear-gradient(135deg, var(--primary-light), var(--primary)); box-shadow: 0 6px 16px -6px rgba(92,21,35,0.5); transition: all .2s ease; }
+  .btn-primary:hover { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); transform: translateY(-1px); }
+  .btn-ghost { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:12px; font-size:14px; font-weight:500; color:#6b5a52; border:1px solid rgba(0,0,0,0.08); background:#fff; cursor:pointer; transition: all .2s ease; }
+  .btn-ghost:hover { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12); }
+  .btn-secondary { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600; color:#5C1523; border:1px solid rgba(201,169,110,0.3); background: rgba(201,169,110,0.1); cursor:pointer; transition: all .2s ease; }
+  .btn-secondary:hover { background: rgba(201,169,110,0.2); border-color: rgba(201,169,110,0.45); }
+
+  .field { width:100%; padding:10px 14px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); background:#fff; font-size:14px; transition: all .18s ease; }
+  .field:focus { outline:none; box-shadow: 0 0 0 2px rgba(201,169,110,0.4); border-color: rgba(201,169,110,0.5); }
+
+  .progress-track { width:100%; border-radius:999px; overflow:hidden; background: rgba(0,0,0,0.06); height:7px; }
+  .progress-fill  { height:100%; border-radius:999px; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
+
+  .crown-badge { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:14px; font-weight:800; font-size:14px; transition: transform .3s; }
+  .crown-gold { background: linear-gradient(135deg,#FFF9EB,#F6E4C0); color:#8A6A1F; border:1.5px solid #E8CF94; }
+  .crown-silver { background: linear-gradient(135deg,#F3F4F6,#D1D5DB); color:#4B5563; border:1.5px solid #9CA3AF; }
+  .crown-bronze { background: linear-gradient(135deg,#FDF4EE,#EAD5C3); color:#78350F; border:1.5px solid #D97706; }
+
+  table.data-table { width:100%; border-collapse:separate; border-spacing:0; font-size:14px; }
+  .data-table thead th { padding:14px 16px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:#EBD9B4; background: linear-gradient(180deg,#5C1523,#4A0F1B); border-bottom:2px solid var(--gold); white-space:nowrap; text-align:right; }
+  .data-table thead th:first-child { border-top-right-radius:16px; }
+  .data-table thead th:last-child { border-top-left-radius:16px; }
+  .data-table tbody td { padding:14px 16px; font-size:13px; color:#1C1008; border-bottom:1px solid rgba(28,16,8,0.06); }
+  .data-table tbody tr:nth-child(even) { background: rgba(245,237,216,0.45); }
+  .data-table tbody tr:hover { background: rgba(201,169,110,0.14); }
+
+  .swatch { border-radius:18px; overflow:hidden; border:1px solid rgba(0,0,0,0.05); }
+  .swatch .chip { height:90px; }
+  .swatch .meta { padding:12px 14px; background:#fff; }
+  .swatch .name { font-weight:800; font-size:13px; }
+  .swatch .hex { font-family:'Consolas',monospace; font-size:12px; color:var(--text-soft); direction:ltr; text-align:right; }
+
+  .pattern-arabesque { background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='1' stroke-opacity='0.18'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3Cpath d='M30 12l18 18-18 18-18-18z'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E"); }
+
+  @keyframes fadeInUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:translateY(0);} }
+  .animate-in { animation: fadeInUp .4s ease both; }
+
+  .note { background: rgba(201,169,110,0.08); border:1px solid rgba(201,169,110,0.25); border-radius:16px; padding:14px 18px; font-size:13.5px; color:#5b4a3e; }
+  .note b { color: var(--primary); }
+  .toc { display:flex; flex-wrap:wrap; gap:8px; margin-top: 20px; }
+  .toc a { font-size:12.5px; font-weight:700; color: var(--primary); background:#fff; border:1px solid rgba(201,169,110,0.3); padding:6px 12px; border-radius:999px; text-decoration:none; transition: all .2s; }
+  .toc a:hover { background: var(--primary); color:#fff; }
+  .label-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px; color: var(--text-soft); font-weight:700; }
+  .dot { width:10px; height:10px; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="page-hero pattern-arabesque">
+  <div class="inner">
+    <span class="chip">◆ نظام التصميم · Design System</span>
+    <h1>دليل تصميم <span class="gold">التوجيه التربوي للتربية البدنية</span></h1>
+    <p>توثيق كامل للهوية البصرية: الألوان، الخطوط، البطاقات، الأزرار، الجداول، التدرّجات، والحركات — مع أمثلة حيّة وكود جاهز للنسخ لاستخدامه في أي مشروع آخر بنفس الهوية.</p>
+    <div class="toc">
+      <a href="#colors">الألوان</a>
+      <a href="#type">الخطوط</a>
+      <a href="#cards">البطاقات</a>
+      <a href="#buttons">الأزرار</a>
+      <a href="#badges">الشارات</a>
+      <a href="#orbs">الأيقونات</a>
+      <a href="#tables">الجداول</a>
+      <a href="#hero">الهيرو والتدرّجات</a>
+      <a href="#misc">عناصر إضافية</a>
+      <a href="#dashboard">تخطيط لوحة التحكم</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ════════ 1) الألوان ════════ -->
+  <section id="colors">
+    <div class="sec-head"><span class="sec-num">1</span><h2 class="sec-title">لوحة الألوان</h2></div>
+    <p class="sec-desc">الهوية مبنية على ثنائية <b>العنابي (Maroon)</b> للسلطة والرسمية، و<b>الذهبي (Gold)</b> للفخامة، فوق خلفية <b>كريمية</b> دافئة. هذه الثلاثية هي جوهر الهوية.</p>
+    <div class="demo">
+      <div class="grid g4">
+        <div class="swatch"><div class="chip" style="background:#5C1523"></div><div class="meta"><div class="name">العنابي الأساسي</div><div class="hex">#5C1523</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#4A0F1B"></div><div class="meta"><div class="name">عنابي غامق</div><div class="hex">#4A0F1B</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#7A1E30"></div><div class="meta"><div class="name">عنابي فاتح</div><div class="hex">#7A1E30</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#3B0A14"></div><div class="meta"><div class="name">عنابي أعمق (هيرو)</div><div class="hex">#3B0A14</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#C9A96E"></div><div class="meta"><div class="name">الذهبي الأساسي</div><div class="hex">#C9A96E</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#DFC48E"></div><div class="meta"><div class="name">ذهبي فاتح</div><div class="hex">#DFC48E</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#A8853A"></div><div class="meta"><div class="name">ذهبي غامق</div><div class="hex">#A8853A</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#EBD9B4"></div><div class="meta"><div class="name">ذهبي نص الجداول</div><div class="hex">#EBD9B4</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FCF9F2"></div><div class="meta"><div class="name">الخلفية الكريمية</div><div class="hex">#FCF9F2</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#F5EDD8"></div><div class="meta"><div class="name">سطح بطاقة دافئ</div><div class="hex">#F5EDD8</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#2A1418"></div><div class="meta"><div class="name">لون النص الأساسي</div><div class="hex">#2A1418</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#7A6A58"></div><div class="meta"><div class="name">نص ثانوي / هادئ</div><div class="hex">#7A6A58</div></div></div>
+      </div>
+      <div class="code-label">متغيّرات CSS — انسخها في :root</div>
+      <pre><code>:root {
+  --primary: #5C1523;       --primary-dark: #4A0F1B;   --primary-light: #7A1E30;
+  --gold: #C9A96E;          --gold-light: #DFC48E;     --gold-dark: #A8853A;
+  --cream: #FCF9F2;         --card-2: #F5EDD8;
+  --ink: #2A1418;           --text-soft: #7A6A58;
+}</code></pre>
+      <div class="code-label">إعداد Tailwind (tailwind.config)</div>
+      <pre><code>colors: {
+  primary: { DEFAULT: "#5C1523", dark: "#4A0F1B", light: "#7A1E30" },
+  gold:    { DEFAULT: "#C9A96E", light: "#DFC48E", dark: "#A8853A" },
+  cream:   "#FCF9F2",
+}</code></pre>
+    </div>
+    <div class="note">🎨 <b>قاعدة الاستخدام:</b> العنابي للعناصر القيادية (الأزرار، ترويسات الجداول، الهيرو). الذهبي للّمسات والتمييز فقط (الحدود، الأيقونات، التوهج) — لا تستخدمه كخلفية كبيرة. الكريمي للخلفية العامة دائمًا.</div>
+  </section>
+
+  <!-- ════════ 2) الخطوط ════════ -->
+  <section id="type">
+    <div class="sec-head"><span class="sec-num">2</span><h2 class="sec-title">الخطوط (Typography)</h2></div>
+    <p class="sec-desc">الخط الأساسي <b>Cairo</b> (مع <b>Tajawal</b> بديلًا). تدرّج الأوزان من 300 إلى 900 يصنع الهرمية البصرية كلها.</p>
+    <div class="demo">
+      <div style="font-size:34px; font-weight:900; color:var(--primary);">عنوان رئيسي — وزن 900</div>
+      <div style="font-size:24px; font-weight:800; color:var(--ink);">عنوان قسم — وزن 800</div>
+      <div style="font-size:18px; font-weight:700; color:var(--ink);">عنوان فرعي — وزن 700</div>
+      <div style="font-size:15px; font-weight:500; color:var(--ink);">نص عادي للقراءة — وزن 500، وهو الأكثر استخدامًا في الفقرات والبيانات.</div>
+      <div style="font-size:13px; font-weight:400; color:var(--text-soft);">نص ثانوي وملاحظات — وزن 400 بلون هادئ.</div>
+      <div class="code-label">الاستيراد + التطبيق</div>
+      <pre><code>@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap');
+
+* { font-family: 'Cairo', sans-serif; }
+html { direction: rtl; }</code></pre>
+    </div>
+  </section>
+
+  <!-- ════════ 3) البطاقات ════════ -->
+  <section id="cards">
+    <div class="sec-head"><span class="sec-num">3</span><h2 class="sec-title">البطاقات (Cards)</h2></div>
+    <p class="sec-desc">ثلاثة مستويات: <b>card</b> القياسية، <b>card-luxurious</b> الفاخرة (زوايا أكبر + ظل مركّب)، و<b>module-card</b> لبطاقات التنقّل. السر في الظلال المركّبة الناعمة وزوايا 16–24px.</p>
+    <div class="demo">
+      <div class="grid g3">
+        <div class="card card-hover">
+          <div style="font-weight:800; margin-bottom:6px;">بطاقة قياسية</div>
+          <div style="font-size:13px; color:var(--text-soft);">‎.card + .card-hover — زوايا 16px وظل خفيف يرتفع عند المرور.</div>
+        </div>
+        <div class="card-luxurious card-luxurious-hover">
+          <div style="font-weight:800; margin-bottom:6px;">بطاقة فاخرة</div>
+          <div style="font-size:13px; color:var(--text-soft);">‎.card-luxurious — زوايا 24px وظل ثلاثي + توهج ذهبي عند المرور.</div>
+        </div>
+        <div class="module-card">
+          <span class="icon-orb" style="width:44px;height:44px;background:rgba(201,169,110,0.12);color:var(--gold-dark);">★</span>
+          <div>
+            <div style="font-weight:800; font-size:14px;">بطاقة قسم</div>
+            <div style="font-size:12px; color:var(--text-soft);">‎.module-card للتنقّل</div>
+          </div>
+        </div>
+      </div>
+      <div class="code-label">CSS</div>
+      <pre><code>.card {
+  background:#fff; border-radius:16px; border:1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(42,20,24,0.04), 0 8px 24px -12px rgba(42,20,24,0.10);
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(42,20,24,0.06), 0 18px 40px -16px rgba(92,21,35,0.22);
+}
+.card-luxurious {
+  background:#fff; border-radius:24px; border:1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(42,20,24,0.02), 0 6px 16px -4px rgba(42,20,24,0.04),
+              0 20px 40px -12px rgba(42,20,24,0.08);
+  transition: all .3s cubic-bezier(.16,1,.3,1);
+}
+.card-luxurious-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(92,21,35,0.03), 0 20px 48px -10px rgba(92,21,35,0.16),
+              0 0 0 1px rgba(201,169,110,0.25); /* توهج ذهبي */
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- ════════ 4) الأزرار ════════ -->
+  <section id="buttons">
+    <div class="sec-head"><span class="sec-num">4</span><h2 class="sec-title">الأزرار (Buttons)</h2></div>
+    <p class="sec-desc">ثلاثة أنماط: أساسي بتدرّج عنابي، ثانوي ذهبي خفيف، وشبح (ghost) للإجراءات الهادئة. كلها بزوايا 12px وحركة رفع خفيفة.</p>
+    <div class="demo">
+      <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+        <button class="btn-primary">◆ زر أساسي</button>
+        <button class="btn-secondary">زر ثانوي</button>
+        <button class="btn-ghost">زر شبح</button>
+      </div>
+      <div class="code-label">CSS</div>
+      <pre><code>.btn-primary {
+  display:inline-flex; align-items:center; gap:8px; padding:10px 16px;
+  border-radius:12px; font-size:14px; font-weight:600; color:#fff; border:none;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  box-shadow: 0 6px 16px -6px rgba(92,21,35,0.5); transition: all .2s ease;
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); transform: translateY(-1px); }
+
+.btn-secondary {
+  padding:10px 16px; border-radius:12px; font-weight:600; color:#5C1523;
+  border:1px solid rgba(201,169,110,0.3); background: rgba(201,169,110,0.1);
+}
+.btn-ghost {
+  padding:10px 16px; border-radius:12px; font-weight:500; color:#6b5a52;
+  border:1px solid rgba(0,0,0,0.08); background:#fff;
+}</code></pre>
+      <div class="code-label">حقل إدخال — .field</div>
+      <div style="max-width:320px; margin-top:6px;"><input class="field" placeholder="اكتب هنا… (جرّب التركيز)" /></div>
+    </div>
+  </section>
+
+  <!-- ════════ 5) الشارات ════════ -->
+  <section id="badges">
+    <div class="sec-head"><span class="sec-num">5</span><h2 class="sec-title">شارات الحالة (Badges)</h2></div>
+    <p class="sec-desc">شارات حبّوبة (pills) لإظهار الحالات: مكتمل، ممتاز، متميّز، قريب. كل حالة بلونها الدلالي مع حلقة خفيفة.</p>
+    <div class="demo">
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <span class="pill badge-complete">✅ مكتمل</span>
+        <span class="pill badge-excellent">★ ممتاز</span>
+        <span class="pill badge-champion">🏆 متميّز</span>
+        <span class="pill badge-near">⚠️ قريب</span>
+      </div>
+      <div class="code-label">CSS</div>
+      <pre><code>.pill { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+.badge-complete  { background:#ecfdf5; color:#047857; box-shadow: inset 0 0 0 1px rgba(167,243,208,.7); }
+.badge-excellent { background:#f0f9ff; color:#0369a1; box-shadow: inset 0 0 0 1px rgba(186,230,253,.7); }
+.badge-champion  { background: linear-gradient(135deg,#FBF1D9,#F4E2B8); color:#8a6a1f; box-shadow: inset 0 0 0 1px #e8cf94; }
+.badge-near      { background:#fff7ed; color:#c2410c; box-shadow: inset 0 0 0 1px rgba(254,215,170,.7); }</code></pre>
+      <div class="code-label">أوسمة الترتيب — crown badges (ذهبي/فضّي/برونزي)</div>
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <span class="crown-badge crown-gold">1</span>
+        <span class="crown-badge crown-silver">2</span>
+        <span class="crown-badge crown-bronze">3</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 6) الأيقونات ════════ -->
+  <section id="orbs">
+    <div class="sec-head"><span class="sec-num">6</span><h2 class="sec-title">دوائر الأيقونات (Icon Orbs)</h2></div>
+    <p class="sec-desc">حاوية مربّعة بزوايا دائرية (16px) للأيقونات. تتلوّن حسب السياق: عنابي متدرّج للأساسي، ذهبي خفيف للثانوي.</p>
+    <div class="demo">
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+        <span class="icon-orb" style="background:linear-gradient(135deg,#7A1E30,#4A0F1B); color:var(--gold);">◆</span>
+        <span class="icon-orb" style="background:rgba(201,169,110,0.15); color:var(--gold-dark);">★</span>
+        <span class="icon-orb" style="width:40px;height:40px;background:rgba(201,169,110,0.1); color:var(--gold-dark);">✦</span>
+        <span class="icon-orb" style="width:56px;height:56px;background:linear-gradient(135deg,#DFC48E,#A8853A); color:#fff;">♛</span>
+      </div>
+      <div class="code-label">CSS</div>
+      <pre><code>.icon-orb { display:flex; align-items:center; justify-content:center; border-radius:16px; width:48px; height:48px; flex-shrink:0; }
+/* أساسي:  background:linear-gradient(135deg,#7A1E30,#4A0F1B); color:#C9A96E;
+   ثانوي:  background:rgba(201,169,110,0.15); color:#A8853A; */</code></pre>
+    </div>
+  </section>
+
+  <!-- ════════ 7) الجداول ════════ -->
+  <section id="tables">
+    <div class="sec-head"><span class="sec-num">7</span><h2 class="sec-title">الجداول (Data Tables)</h2></div>
+    <p class="sec-desc">ترويسة عنابية متدرّجة بنص ذهبي وحدّ سفلي ذهبي، صفوف متناوبة بلون بيج خفيف، وإبراز ذهبي عند المرور. التوقيع البصري الأبرز في النظام.</p>
+    <div class="demo">
+      <div style="overflow-x:auto; border-radius:16px;">
+        <table class="data-table">
+          <thead><tr><th>الموجّه</th><th>المطلوب</th><th>المغطّى</th><th>نسبة التغطية</th><th>الحالة</th></tr></thead>
+          <tbody>
+            <tr><td>أحمد المنصوري</td><td>12</td><td>12</td><td>100%</td><td><span class="pill badge-champion">🏆 متميّز</span></td></tr>
+            <tr><td>سالم الكواري</td><td>10</td><td>10</td><td>100%</td><td><span class="pill badge-excellent">★ ممتاز</span></td></tr>
+            <tr><td>خالد العطية</td><td>14</td><td>11</td><td>78%</td><td><span class="pill badge-near">⚠️ قريب</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-label">CSS</div>
+      <pre><code>.data-table { width:100%; border-collapse:separate; border-spacing:0; font-size:14px; }
+.data-table thead th {
+  padding:14px 16px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+  color:#EBD9B4; background: linear-gradient(180deg,#5C1523,#4A0F1B);
+  border-bottom:2px solid var(--gold); white-space:nowrap; text-align:right;
+}
+.data-table thead th:first-child { border-top-right-radius:16px; }
+.data-table thead th:last-child  { border-top-left-radius:16px; }
+.data-table tbody td { padding:14px 16px; font-size:13px; color:#1C1008; border-bottom:1px solid rgba(28,16,8,0.06); }
+.data-table tbody tr:nth-child(even) { background: rgba(245,237,216,0.45); }
+.data-table tbody tr:hover { background: rgba(201,169,110,0.14); }</code></pre>
+      <div class="note">💡 يوجد أيضًا <b>.glass-table</b> نسخة زجاجية (خلفية شفافة + backdrop-blur + شريط عنابي جانبي يظهر عند المرور) للجداول فوق خلفيات ملوّنة.</div>
+    </div>
+  </section>
+
+  <!-- ════════ 8) الهيرو ════════ -->
+  <section id="hero">
+    <div class="sec-head"><span class="sec-num">8</span><h2 class="sec-title">الهيرو والتدرّجات (Hero & Gradients)</h2></div>
+    <p class="sec-desc">ترويسة فخمة بتدرّج عنابي قطري + توهج ذهبي من الزاوية + شبكة نقطية خفيفة. هي التي تصنع الانطباع الأول الفاخر.</p>
+    <div class="demo" style="padding:0; overflow:hidden;">
+      <div class="page-hero pattern-arabesque" style="margin:0; padding:40px 32px;">
+        <div style="position:relative;">
+          <span class="chip">◆ مثال هيرو</span>
+          <h1 style="font-size:26px;">لوحة <span class="gold">التحكم الرئيسية</span></h1>
+          <p>تدرّج عنابي + توهج ذهبي + شبكة نقطية + نقش أرابيسك خفيف.</p>
+        </div>
+      </div>
+    </div>
+    <div class="code-label">CSS — التدرّج الفخم</div>
+    <pre><code>.hero-gradient-premium {
+  background: radial-gradient(circle at 0% 0%, rgba(201,169,110,0.15) 0%, transparent 50%),
+              linear-gradient(135deg, #4A0F1B 0%, #5C1523 50%, #3B0A14 100%);
+  position: relative;
+}
+/* شبكة نقطية فوق التدرّج */
+.hero-gradient-premium::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(90deg, rgba(201,169,110,0.05) 1px, transparent 1px),
+              linear-gradient(rgba(201,169,110,0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+/* خلفية الجسم العامة */
+body {
+  background-color: #FCF9F2;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(201,169,110,0.06) 0%, transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(92,21,35,0.04) 0%, transparent 40%);
+  background-attachment: fixed;
+}</code></pre>
+  </section>
+
+  <!-- ════════ 9) عناصر إضافية ════════ -->
+  <section id="misc">
+    <div class="sec-head"><span class="sec-num">9</span><h2 class="sec-title">عناصر إضافية</h2></div>
+    <div class="demo">
+      <div class="label-row">شريط تقدّم — .progress-track / .progress-fill</div>
+      <div class="progress-track" style="margin-bottom:18px;"><div class="progress-fill" style="width:72%;"></div></div>
+
+      <div class="label-row">النقش الإسلامي (أرابيسك) كخلفية للترويسات</div>
+      <div class="pattern-arabesque" style="height:80px; border-radius:14px; background-color:#4A0F1B; margin-bottom:18px;"></div>
+
+      <div class="label-row">الحركة الافتراضية — دخول ناعم</div>
+      <div class="card animate-in" style="display:inline-block;">عنصر يدخل بحركة fadeInUp</div>
+
+      <div class="code-label">CSS</div>
+      <pre><code>.progress-track { width:100%; border-radius:999px; overflow:hidden; background: rgba(0,0,0,0.06); height:7px; }
+.progress-fill  { height:100%; border-radius:999px; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
+
+@keyframes fadeInUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:translateY(0);} }
+.animate-in { animation: fadeInUp .4s ease both; }
+
+/* النقش الأرابيسك (SVG مضمّن) */
+.pattern-arabesque {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='1' stroke-opacity='0.18'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3Cpath d='M30 12l18 18-18 18-18-18z'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E");
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- ════════ 10) تخطيط لوحة التحكم ════════ -->
+  <section id="dashboard">
+    <div class="sec-head"><span class="sec-num">10</span><h2 class="sec-title">تخطيط لوحة التحكم (Dashboard)</h2></div>
+    <p class="sec-desc">شرح بنية الصفحة كما هي في الموقع — قابلة لإعادة الاستخدام في أي تطبيق.</p>
+
+    <div class="demo">
+      <!-- محاكاة مصغّرة للوحة -->
+      <div style="border:1px solid rgba(0,0,0,0.06); border-radius:18px; overflow:hidden;">
+        <!-- top bar -->
+        <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:rgba(255,255,255,0.85); border-bottom:1px solid rgba(0,0,0,0.05);">
+          <span class="icon-orb" style="width:34px;height:34px;background:linear-gradient(135deg,#7A1E30,#4A0F1B);color:var(--gold);">◆</span>
+          <div style="display:flex; gap:6px; margin-inline-start:8px;">
+            <span style="background:var(--primary); color:#fff; padding:6px 12px; border-radius:10px; font-size:12px; font-weight:700;">الرئيسية</span>
+            <span style="color:#5b4a3e; padding:6px 12px; font-size:12px; font-weight:600;">الموجهون</span>
+            <span style="color:#5b4a3e; padding:6px 12px; font-size:12px; font-weight:600;">التقارير</span>
+          </div>
+          <span style="margin-inline-start:auto; width:30px; height:30px; border-radius:999px; background:linear-gradient(135deg,#DFC48E,#A8853A);"></span>
+        </div>
+        <!-- content -->
+        <div style="padding:16px; background:var(--cream);">
+          <div class="page-hero pattern-arabesque" style="margin:0 0 14px; padding:22px;">
+            <div style="position:relative;"><div style="font-size:18px; font-weight:900;">مرحبًا، رئيس التوجيه</div><div style="font-size:12px; color:rgba(255,255,255,0.7);">نظرة عامة — العام الدراسي 2025-2026</div></div>
+          </div>
+          <div class="grid g4" style="gap:10px; margin-bottom:14px;">
+            <div class="card" style="padding:14px;"><div style="font-size:11px;color:var(--text-soft);">الموجهون</div><div style="font-size:22px;font-weight:900;color:var(--primary);">13</div></div>
+            <div class="card" style="padding:14px;"><div style="font-size:11px;color:var(--text-soft);">المدارس</div><div style="font-size:22px;font-weight:900;color:var(--primary);">221</div></div>
+            <div class="card" style="padding:14px;"><div style="font-size:11px;color:var(--text-soft);">الزيارات</div><div style="font-size:22px;font-weight:900;color:var(--primary);">486</div></div>
+            <div class="card" style="padding:14px;"><div style="font-size:11px;color:var(--text-soft);">الاستمارات</div><div style="font-size:22px;font-weight:900;color:var(--primary);">312</div></div>
+          </div>
+          <div class="grid g2" style="gap:10px;">
+            <div class="card-luxurious" style="padding:16px;"><div style="font-weight:800;margin-bottom:8px;">مقارنة التغطية</div><div class="progress-track" style="margin-bottom:8px;"><div class="progress-fill" style="width:88%"></div></div><div class="progress-track"><div class="progress-fill" style="width:64%"></div></div></div>
+            <div class="card-luxurious" style="padding:16px;"><div style="font-weight:800;margin-bottom:8px;">لوحة الصدارة</div><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;"><span class="crown-badge crown-gold" style="width:26px;height:26px;font-size:12px;">1</span><span style="font-size:13px;">أحمد المنصوري</span></div><div style="display:flex;gap:8px;align-items:center;"><span class="crown-badge crown-silver" style="width:26px;height:26px;font-size:12px;">2</span><span style="font-size:13px;">سالم الكواري</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-label" style="margin-top:18px;">بنية الصفحة — من الأعلى للأسفل</div>
+      <div style="font-size:14px; line-height:2;">
+        <b style="color:var(--primary);">①  الشريط العلوي (TopBar):</b> شفّاف مع <code>backdrop-blur</code>، شعار (icon-orb عنابي) + تنقّل أفقي (العنصر النشط بخلفية عنابية ونص أبيض) + بحث + جرس تنبيهات + قائمة الملف. ارتفاع ثابت 60px، sticky أعلى الصفحة.<br/>
+        <b style="color:var(--primary);">②  الهيرو الترحيبي:</b> <code>.hero-gradient-premium</code> + نقش أرابيسك، عنوان ترحيبي + السنة الدراسية.<br/>
+        <b style="color:var(--primary);">③  شريط المؤشرات (KPI):</b> شبكة 4 بطاقات <code>.card</code> (رقم كبير وزن 900 عنابي + عنوان صغير هادئ).<br/>
+        <b style="color:var(--primary);">④  المحتوى الرئيسي:</b> شبكة بطاقات <code>.card-luxurious</code> — رسوم بيانية، جداول، لوحة صدارة بأوسمة crown.<br/>
+        <b style="color:var(--primary);">⑤  التنقّل السفلي (موبايل):</b> شريط سفلي ثابت بـ <code>backdrop-blur</code> + 4–5 تبويبات (<code>.tab-item</code>) وزر "المزيد".<br/>
+        <b style="color:var(--primary);">⑥  المساعد الذكي:</b> زر عائم أسفل اليسار يفتح نافذة محادثة.
+      </div>
+
+      <div class="code-label" style="margin-top:18px;">القياسات والمسافات المعتمدة</div>
+      <pre><code>الحاوية القصوى:   max-width: 1100–1280px; margin: 0 auto;
+الحشو الأفقي:     16–24px (موبايل/سطح مكتب)
+المسافة بين الأقسام: 20px (space-y-5)
+زوايا البطاقات:   16px (card) · 24px (luxurious) · 12px (أزرار/حقول)
+ارتفاع TopBar:    60px   |   ارتفاع BottomNav: 64px
+منحنى الحركة:     cubic-bezier(0.16, 1, 0.3, 1)  — "ease-out-expo" ناعم</code></pre>
+    </div>
+
+    <div class="note">📦 <b>للاستخدام في مشروعك الجديد:</b> انسخ كتلة <code>:root</code> + كلاسات المكوّنات من هذا الملف مباشرة (كلها CSS صرف بدون اعتماديات). لو بتستخدم Tailwind، انسخ كتلة <code>colors</code> أعلاه. الخط Cairo من Google Fonts. اضبط <code>html { direction: rtl; }</code> للعربية.</div>
+  </section>
+
+  <div style="text-align:center; color:var(--text-soft); font-size:13px; margin-top:40px;">
+    نظام تصميم التوجيه التربوي للتربية البدنية — وزارة التربية والتعليم، دولة قطر ◆ كل العناصر CSS صرف قابلة للنسخ
+  </div>
+
+</div>
+</body>
+</html>
