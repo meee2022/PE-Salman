@@ -52,3 +52,6 @@ scratch/
 
 # local dev server log
 .dev-server.log
+
+# بيانات محلية حسّاسة + ملفات ضخمة — لا تُرفع إطلاقاً (PII + ملف 3.8GB)
+all files/

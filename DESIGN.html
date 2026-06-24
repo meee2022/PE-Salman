@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل هوية التطبيق — نظام التوجيه التربوي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+body {
+  background: #FCF9F2;
+  color: #2A1418;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(201,169,110,0.07) 0%, transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(92,21,35,0.04) 0%, transparent 40%);
+}
+
+/* ─── Layout ─── */
+.page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+
+/* ─── Cover ─── */
+.cover {
+  background: radial-gradient(circle at 0% 0%, rgba(201,169,110,0.15) 0%, transparent 50%),
+              linear-gradient(135deg, #4A0F1B 0%, #5C1523 55%, #3B0A14 100%);
+  border-radius: 28px;
+  padding: 56px 48px;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+.cover::before {
+  content:'';
+  position:absolute;inset:0;
+  background: repeating-linear-gradient(45deg, rgba(201,169,110,0.04) 0, rgba(201,169,110,0.04) 1px, transparent 1px, transparent 20px);
+  pointer-events:none;
+}
+.cover-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1);
+  padding:6px 16px; border-radius:999px;
+  font-size:12px; font-weight:700; color:#DFC48E;
+  margin-bottom:20px;
+}
+.cover-badge span { width:7px;height:7px;border-radius:50%;background:#C9A96E;animation:pulse 2s infinite; }
+.cover h1 { font-size:32px; font-weight:900; color:#fff; line-height:1.2; margin-bottom:10px; }
+.cover p  { font-size:14px; color:rgba(255,255,255,0.6); font-weight:500; }
+.cover-line { width:60px;height:3px;background:linear-gradient(90deg,#C9A96E,#DFC48E);border-radius:2px;margin:20px 0; }
+.cover-meta { display:flex;gap:32px;margin-top:28px; }
+.cover-meta-item { }
+.cover-meta-item .val { font-size:22px;font-weight:900;color:#C9A96E; }
+.cover-meta-item .lbl { font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:2px; }
+
+/* ─── Section ─── */
+.section { margin-bottom:56px; }
+.section-header {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:28px;
+  padding-bottom:14px;
+  border-bottom: 1.5px solid rgba(42,20,24,0.06);
+}
+.section-num {
+  width:32px;height:32px;border-radius:10px;
+  background:linear-gradient(135deg,#5C1523,#4A0F1B);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#C9A96E;
+  flex-shrink:0;
+}
+.section-title { font-size:20px;font-weight:900;color:#1C1008; }
+.section-sub   { font-size:12px;font-weight:600;color:#8A7A72;margin-top:2px; }
+
+/* ─── Color Swatches ─── */
+.color-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px; }
+.swatch {
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 4px 16px -6px rgba(0,0,0,0.12);
+  transition:transform 0.2s;cursor:default;
+}
+.swatch:hover { transform:translateY(-3px); }
+.swatch-color { height:80px;position:relative; }
+.swatch-color-dot {
+  position:absolute;bottom:10px;left:10px;
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(255,255,255,0.3);
+  border:2px solid rgba(255,255,255,0.5);
+}
+.swatch-info { background:#fff;padding:12px 14px; }
+.swatch-name { font-size:12px;font-weight:800;color:#1C1008;margin-bottom:3px; }
+.swatch-hex  { font-size:11px;font-weight:600;color:#8A7A72;font-family:monospace;letter-spacing:0.5px; }
+.swatch-var  { font-size:10px;font-weight:600;color:#C9A96E;margin-top:2px; }
+
+/* ─── Token Row ─── */
+.token-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+@media(max-width:640px){ .token-grid { grid-template-columns:1fr; } }
+.token {
+  display:flex;align-items:center;gap:12px;
+  background:#fff;border-radius:16px;padding:14px 16px;
+  border:1px solid rgba(0,0,0,0.04);
+  box-shadow:0 1px 3px rgba(0,0,0,0.03), 0 6px 16px -8px rgba(0,0,0,0.06);
+}
+.token-dot { width:36px;height:36px;border-radius:12px;flex-shrink:0; }
+.token-label { font-size:12px;font-weight:800;color:#1C1008; }
+.token-val   { font-size:11px;font-weight:600;color:#8A7A72;font-family:monospace; }
+
+/* ─── Typography ─── */
+.type-samples { display:flex;flex-direction:column;gap:12px; }
+.type-row {
+  background:#fff;border-radius:16px;padding:18px 20px;
+  border:1px solid rgba(0,0,0,0.04);
+  box-shadow:0 1px 3px rgba(0,0,0,0.03), 0 6px 16px -8px rgba(0,0,0,0.06);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.type-meta { font-size:10px;font-weight:700;color:#C9A96E;white-space:nowrap;flex-shrink:0;background:#FBF1D9;padding:4px 10px;border-radius:8px; }
+
+/* ─── Components ─── */
+.comp-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px; }
+.comp-card {
+  background:#fff;border-radius:20px;padding:24px;
+  border:1px solid rgba(0,0,0,0.04);
+  box-shadow:0 2px 8px -4px rgba(0,0,0,0.06), 0 12px 28px -10px rgba(0,0,0,0.06);
+}
+.comp-label { font-size:10px;font-weight:800;color:#8A7A72;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px; }
+
+/* ─── Buttons ─── */
+.btn-primary-demo {
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:12px;
+  font-size:14px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#7A1E30,#5C1523);
+  box-shadow:0 6px 16px -6px rgba(92,21,35,0.5);
+  border:none;cursor:pointer;font-family:'Cairo',sans-serif;
+}
+.btn-ghost-demo {
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:12px;
+  font-size:14px;font-weight:600;color:#6b5a52;
+  background:#fff;border:1.5px solid rgba(0,0,0,0.1);
+  cursor:pointer;font-family:'Cairo',sans-serif;
+}
+.btn-secondary-demo {
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:12px;
+  font-size:14px;font-weight:700;color:#5C1523;
+  background:rgba(201,169,110,0.12);border:1.5px solid rgba(201,169,110,0.35);
+  cursor:pointer;font-family:'Cairo',sans-serif;
+}
+.btn-gold-demo {
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:12px;
+  font-size:14px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#C9A96E,#A8853A);
+  box-shadow:0 6px 16px -6px rgba(168,133,58,0.5);
+  border:none;cursor:pointer;font-family:'Cairo',sans-serif;
+}
+
+/* ─── Badges ─── */
+.badge-row { display:flex;flex-wrap:wrap;gap:8px; }
+.badge {
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;
+}
+
+/* ─── Field ─── */
+.field-demo {
+  width:100%;padding:10px 14px;border-radius:12px;
+  border:1.5px solid rgba(0,0,0,0.09);background:#fff;
+  font-size:14px;font-family:'Cairo',sans-serif;color:#1C1008;
+  outline:none;transition:all 0.18s;
+}
+.field-demo:focus { border-color:rgba(201,169,110,0.55);box-shadow:0 0 0 3px rgba(201,169,110,0.18); }
+
+/* ─── Progress ─── */
+.progress-track { width:100%;height:8px;border-radius:999px;background:rgba(0,0,0,0.06);overflow:hidden; }
+.progress-fill  { height:100%;border-radius:999px;background:linear-gradient(90deg,#A8853A,#C9A96E); }
+
+/* ─── Shadow Scale ─── */
+.shadow-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
+.shadow-box {
+  background:#fff;border-radius:16px;height:80px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+}
+.shadow-name { font-size:11px;font-weight:700;color:#8A7A72; }
+
+/* ─── Radius Scale ─── */
+.radius-grid { display:flex;gap:16px;flex-wrap:wrap; }
+.radius-box {
+  background:#fff;border:2px solid rgba(201,169,110,0.3);
+  display:flex;align-items:center;justify-content:center;
+  width:80px;height:80px;
+  font-size:11px;font-weight:700;color:#5C1523;text-align:center;
+}
+
+/* ─── Pattern ─── */
+.pattern-box {
+  border-radius:20px;padding:32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='1' stroke-opacity='0.25'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3Cpath d='M30 12l18 18-18 18-18-18z'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E");
+  background: linear-gradient(135deg,#4A0F1B,#5C1523);
+  position:relative;
+}
+.pattern-box::before {
+  content:'';position:absolute;inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='1' stroke-opacity='0.18'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3Cpath d='M30 12l18 18-18 18-18-18z'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E");
+  border-radius:20px;pointer-events:none;
+}
+.pattern-box-inner { position:relative;z-index:1;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;text-align:center; }
+
+/* ─── Activity Colors ─── */
+.activity-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px; }
+.activity-chip {
+  border-radius:12px;padding:10px 14px;
+  font-size:12px;font-weight:700;
+  display:flex;flex-direction:column;gap:4px;
+}
+.activity-code { font-size:10px;font-weight:800;font-family:monospace;opacity:0.6; }
+
+/* ─── Divider ─── */
+.divider { height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,110,0.2),transparent);margin:4px 0 32px; }
+
+/* ─── Crown ─── */
+.crown-demo { display:flex;gap:10px;align-items:center; }
+.crown { width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900; }
+.crown-g { background:linear-gradient(135deg,#FFF9EB,#F6E4C0);color:#8A6A1F;border:1.5px solid #E8CF94; }
+.crown-s { background:linear-gradient(135deg,#F3F4F6,#D1D5DB);color:#4B5563;border:1.5px solid #9CA3AF; }
+.crown-b { background:linear-gradient(135deg,#FDF4EE,#EAD5C3);color:#78350F;border:1.5px solid #D97706; }
+
+/* ─── Semantic ─── */
+.semantic-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px; }
+.semantic-item {
+  border-radius:14px;padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1px solid rgba(0,0,0,0.04);
+  box-shadow:0 2px 8px -4px rgba(0,0,0,0.06);
+}
+.semantic-dot { width:28px;height:28px;border-radius:9px;flex-shrink:0; }
+.semantic-name { font-size:12px;font-weight:800;color:#1C1008; }
+.semantic-desc { font-size:10px;font-weight:600;color:#8A7A72; }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-thumb { background:linear-gradient(#5C1523,#4A0F1B);border-radius:4px; }
+
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.5; }
+}
+
+/* ─── Footer ─── */
+.footer {
+  text-align:center;padding:32px;margin-top:60px;
+  border-top:1.5px solid rgba(201,169,110,0.15);
+  color:#A89A92;font-size:12px;font-weight:600;
+}
+.footer strong { color:#C9A96E; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══ COVER ═══ -->
+  <div class="cover">
+    <div class="cover-badge"><span></span>دليل الهوية البصرية</div>
+    <h1>نظام إدارة التوجيه التربوي<br>للتربية البدنية</h1>
+    <p>وزارة التربية والتعليم — دولة قطر</p>
+    <div class="cover-line"></div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);">Design System v1.0 — مرجع شامل للألوان والمكونات والهوية البصرية</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><div class="val">2</div><div class="lbl">خطوط رئيسية</div></div>
+      <div class="cover-meta-item"><div class="val">6</div><div class="lbl">ألوان أساسية</div></div>
+      <div class="cover-meta-item"><div class="val">14</div><div class="lbl">كود نشاط</div></div>
+      <div class="cover-meta-item"><div class="val">RTL</div><div class="lbl">اتجاه النص</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 1. COLORS ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">١</div>
+      <div>
+        <div class="section-title">لوحة الألوان الأساسية</div>
+        <div class="section-sub">Brand Color Palette</div>
+      </div>
+    </div>
+
+    <!-- Primary -->
+    <p style="font-size:11px;font-weight:800;color:#5C1523;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">Primary — العنابي الملكي</p>
+    <div class="color-grid" style="margin-bottom:24px;">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#4A0F1B;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary Dark</div>
+          <div class="swatch-hex">#4A0F1B</div>
+          <div class="swatch-var">--primary-dark</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#5C1523;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary Default</div>
+          <div class="swatch-hex">#5C1523</div>
+          <div class="swatch-var">--primary</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#7A1E30;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary Light</div>
+          <div class="swatch-hex">#7A1E30</div>
+          <div class="swatch-var">--primary-light</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#3B0A14;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primary Deepest</div>
+          <div class="swatch-hex">#3B0A14</div>
+          <div class="swatch-var">Hero BG</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gold -->
+    <p style="font-size:11px;font-weight:800;color:#A8853A;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">Gold — الذهبي الملكي</p>
+    <div class="color-grid" style="margin-bottom:24px;">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#A8853A;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Gold Dark</div>
+          <div class="swatch-hex">#A8853A</div>
+          <div class="swatch-var">--gold-dark</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#C9A96E;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Gold Default</div>
+          <div class="swatch-hex">#C9A96E</div>
+          <div class="swatch-var">--gold</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#DFC48E;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Gold Light</div>
+          <div class="swatch-hex">#DFC48E</div>
+          <div class="swatch-var">--gold-light</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FBF1D9;">
+          <div class="swatch-color-dot" style="background:rgba(201,169,110,0.4);"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Gold Surface</div>
+          <div class="swatch-hex">#FBF1D9</div>
+          <div class="swatch-var">Champion BG</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Neutral -->
+    <p style="font-size:11px;font-weight:800;color:#7A6A58;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">Neutral — الحيادي الدافئ</p>
+    <div class="color-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1C1008;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Ink Strong</div>
+          <div class="swatch-hex">#1C1008</div>
+          <div class="swatch-var">--text-strong</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2A1418;">
+          <div class="swatch-color-dot"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Ink Default</div>
+          <div class="swatch-hex">#2A1418</div>
+          <div class="swatch-var">--ink</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#7A6A58;">
+          <div class="swatch-color-dot" style="background:rgba(255,255,255,0.5);"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text Soft</div>
+          <div class="swatch-hex">#7A6A58</div>
+          <div class="swatch-var">--text-soft</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#A89A92;">
+          <div class="swatch-color-dot" style="background:rgba(255,255,255,0.5);"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Muted</div>
+          <div class="swatch-hex">#A89A92</div>
+          <div class="swatch-var">--muted</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F5EDD8;">
+          <div class="swatch-color-dot" style="background:rgba(201,169,110,0.4);"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Card 2</div>
+          <div class="swatch-hex">#F5EDD8</div>
+          <div class="swatch-var">--card-2</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FCF9F2;">
+          <div class="swatch-color-dot" style="background:rgba(201,169,110,0.3);"></div>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">Cream BG</div>
+          <div class="swatch-hex">#FCF9F2</div>
+          <div class="swatch-var">--cream</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 2. SEMANTIC ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٢</div>
+      <div>
+        <div class="section-title">الألوان الدلالية</div>
+        <div class="section-sub">Semantic Colors — للحالات والتنبيهات</div>
+      </div>
+    </div>
+    <div class="semantic-grid">
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#10b981,#059669);"></div>
+        <div><div class="semantic-name">نجاح / مكتمل</div><div class="semantic-desc">#10b981 — Emerald 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);"></div>
+        <div><div class="semantic-name">معلومة / تطوير</div><div class="semantic-desc">#0ea5e9 — Sky 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#f59e0b,#d97706);"></div>
+        <div><div class="semantic-name">تحذير / قريب</div><div class="semantic-desc">#f59e0b — Amber 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#fb923c,#f97316);"></div>
+        <div><div class="semantic-name">إجازة / أذونات</div><div class="semantic-desc">#fb923c — Orange 400</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#ef4444,#dc2626);"></div>
+        <div><div class="semantic-name">خطر / غياب</div><div class="semantic-desc">#ef4444 — Red 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#a855f7,#7c3aed);"></div>
+        <div><div class="semantic-name">إذن رسمي</div><div class="semantic-desc">#a855f7 — Purple 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#14b8a6,#0d9488);"></div>
+        <div><div class="semantic-name">إجازة الحج</div><div class="semantic-desc">#14b8a6 — Teal 500</div></div>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background:linear-gradient(135deg,#fb7185,#f43f5e);"></div>
+        <div><div class="semantic-name">مرضية / روز</div><div class="semantic-desc">#fb7185 — Rose 400</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 3. ACTIVITY CODES ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٣</div>
+      <div>
+        <div class="section-title">أكواد النشاط اليومي</div>
+        <div class="section-sub">Activity Code Colors — كل كود له لون مخصص</div>
+      </div>
+    </div>
+    <div class="activity-grid">
+      <div class="activity-chip" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#065f46;">
+        <div class="activity-code">VS</div>
+        <div>زيارة صفية</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(92,21,35,0.07);border:1px solid rgba(92,21,35,0.2);color:#5C1523;">
+        <div class="activity-code">OF</div>
+        <div>عمل مكتبي</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.3);color:#0369a1;">
+        <div class="activity-code">TR</div>
+        <div>تطوير مهني</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(14,165,233,0.07);border:1px solid rgba(14,165,233,0.2);color:#0284c7;">
+        <div class="activity-code">OL</div>
+        <div>تعلم عن بعد</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(122,30,48,0.07);border:1px solid rgba(122,30,48,0.2);color:#7A1E30;">
+        <div class="activity-code">MT</div>
+        <div>اجتماع فني</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#92400e;">
+        <div class="activity-code">AC</div>
+        <div>أنشطة رياضية</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#78350f;">
+        <div class="activity-code">SP</div>
+        <div>مهمة رسمية</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);color:#92400e;">
+        <div class="activity-code">VP</div>
+        <div>مهمة عمل</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:#9a3412;">
+        <div class="activity-code">LV</div>
+        <div>إجازة اعتيادية</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);color:#c2410c;">
+        <div class="activity-code">CL</div>
+        <div>إجازة عارضة</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(251,113,133,0.1);border:1px solid rgba(251,113,133,0.3);color:#9f1239;">
+        <div class="activity-code">SL</div>
+        <div>إجازة مرضية</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.3);color:#134e4a;">
+        <div class="activity-code">HC</div>
+        <div>إجازة الحج</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#6b21a8;">
+        <div class="activity-code">WP</div>
+        <div>إذن رسمي</div>
+      </div>
+      <div class="activity-chip" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#991b1b;">
+        <div class="activity-code">AB</div>
+        <div>غياب بدون عذر</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 4. TYPOGRAPHY ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٤</div>
+      <div>
+        <div class="section-title">الخطوط والطباعة</div>
+        <div class="section-sub">Typography System</div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;padding:24px;margin-bottom:20px;border:1px solid rgba(0,0,0,0.04);box-shadow:0 2px 8px -4px rgba(0,0,0,0.06);">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div>
+          <p style="font-size:10px;font-weight:800;color:#C9A96E;margin-bottom:8px;">الخط الأساسي</p>
+          <p style="font-size:28px;font-weight:900;color:#1C1008;font-family:'Cairo',sans-serif;">Cairo</p>
+          <p style="font-size:12px;color:#8A7A72;font-weight:600;">300 · 400 · 500 · 600 · 700 · 800 · 900</p>
+        </div>
+        <div>
+          <p style="font-size:10px;font-weight:800;color:#C9A96E;margin-bottom:8px;">خط بديل</p>
+          <p style="font-size:28px;font-weight:900;color:#1C1008;">Tajawal</p>
+          <p style="font-size:12px;color:#8A7A72;font-weight:600;">400 · 500 · 700 · 800</p>
+        </div>
+        <div>
+          <p style="font-size:10px;font-weight:800;color:#C9A96E;margin-bottom:8px;">خط الأرقام</p>
+          <p style="font-size:28px;font-weight:900;color:#1C1008;font-family:sans-serif;">0123456789</p>
+          <p style="font-size:12px;color:#8A7A72;font-weight:600;">Western Numerals (en-US)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="type-samples">
+      <div class="type-row">
+        <span style="font-size:30px;font-weight:900;color:#1C1008;">عنوان رئيسي H1</span>
+        <span class="type-meta">30px · 900 · #1C1008</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:22px;font-weight:900;color:#1C1008;">عنوان قسم H2</span>
+        <span class="type-meta">22px · 900 · #1C1008</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:16px;font-weight:800;color:#1C1008;">عنوان بطاقة H3</span>
+        <span class="type-meta">16px · 800 · #1C1008</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:14px;font-weight:700;color:#2A1418;">نص أساسي Body</span>
+        <span class="type-meta">14px · 700 · #2A1418</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:12px;font-weight:600;color:#7A6A58;">نص مساعد Secondary</span>
+        <span class="type-meta">12px · 600 · #7A6A58</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:11px;font-weight:700;color:#A89A92;">نص خافت Muted</span>
+        <span class="type-meta">11px · 700 · #A89A92</span>
+      </div>
+      <div class="type-row">
+        <span style="font-size:10px;font-weight:800;color:#C9A96E;text-transform:uppercase;letter-spacing:1px;">وسم علوي Label</span>
+        <span class="type-meta">10px · 800 · uppercase · #C9A96E</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 5. COMPONENTS ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٥</div>
+      <div>
+        <div class="section-title">المكونات</div>
+        <div class="section-sub">UI Components</div>
+      </div>
+    </div>
+    <div class="comp-grid">
+
+      <!-- Buttons -->
+      <div class="comp-card">
+        <div class="comp-label">الأزرار — Buttons</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn-primary-demo">زر أساسي Primary</button>
+          <button class="btn-secondary-demo">زر ثانوي Secondary</button>
+          <button class="btn-gold-demo">زر ذهبي Gold</button>
+          <button class="btn-ghost-demo">زر شفاف Ghost</button>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="comp-card">
+        <div class="comp-label">الشارات — Badges</div>
+        <div class="badge-row">
+          <span class="badge" style="background:linear-gradient(135deg,#FBF1D9,#F4E2B8);color:#8a6a1f;border:1px solid #e8cf94;">🏆 متميز</span>
+          <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;">✅ ممتاز</span>
+          <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">✅ مكتمل</span>
+          <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">⚠️ قريب</span>
+          <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">⚠️ متأخر</span>
+          <span class="badge" style="background:rgba(201,169,110,0.12);color:#5C1523;border:1px solid rgba(201,169,110,0.3);">جديد</span>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="comp-card">
+        <div class="comp-label">حقل الإدخال — Input Field</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input class="field-demo" type="text" placeholder="اكتب هنا…" value="نموذج نص عربي">
+          <input class="field-demo" type="text" placeholder="بحث سريع…">
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:10px;font-weight:700;color:#8A7A72;margin-bottom:4px;">border-radius: 12px · ring-gold/40 عند التركيز</div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="comp-card">
+        <div class="comp-label">شرائط التقدم — Progress Bars</div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;font-weight:700;color:#1C1008;">
+              <span>سلمان الحازمي</span><span style="color:#C9A96E;">87%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:87%;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;font-weight:700;color:#1C1008;">
+              <span>فيصل البدر</span><span style="color:#C9A96E;">64%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:64%;background:linear-gradient(90deg,#5C1523,#7A1E30);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;font-weight:700;color:#1C1008;">
+              <span>أحمد الرئيسي</span><span style="color:#10b981;">100%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:linear-gradient(90deg,#059669,#10b981);"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crown -->
+      <div class="comp-card">
+        <div class="comp-label">تاج الترتيب — Crown Badges</div>
+        <div class="crown-demo">
+          <div class="crown crown-g">١</div>
+          <div style="font-size:12px;font-weight:700;color:#8A6A1F;">ذهبي — المركز الأول</div>
+        </div>
+        <div class="crown-demo" style="margin-top:10px;">
+          <div class="crown crown-s">٢</div>
+          <div style="font-size:12px;font-weight:700;color:#4B5563;">فضي — المركز الثاني</div>
+        </div>
+        <div class="crown-demo" style="margin-top:10px;">
+          <div class="crown crown-b">٣</div>
+          <div style="font-size:12px;font-weight:700;color:#78350F;">برونزي — المركز الثالث</div>
+        </div>
+      </div>
+
+      <!-- KPI Card -->
+      <div class="comp-card">
+        <div class="comp-label">بطاقة KPI</div>
+        <div style="background:linear-gradient(135deg,rgba(92,21,35,0.06),rgba(92,21,35,0.02));border:1px solid rgba(92,21,35,0.08);border-radius:16px;padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:#7A6A58;">الموجهون</span>
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(92,21,35,0.08);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:16px;">👥</span>
+            </div>
+          </div>
+          <div style="font-size:32px;font-weight:900;color:#5C1523;line-height:1;font-family:sans-serif;">14</div>
+          <div style="font-size:11px;font-weight:600;color:#A89A92;margin-top:4px;">9 ذكور · 5 إناث</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ 6. GRADIENTS ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٦</div>
+      <div>
+        <div class="section-title">التدرجات اللونية</div>
+        <div class="section-sub">Gradients</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+      <div>
+        <div style="height:64px;border-radius:16px;background:linear-gradient(135deg,#4A0F1B,#5C1523,#3B0A14);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Hero Gradient</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">135deg → #4A0F1B · #5C1523 · #3B0A14</div>
+      </div>
+      <div>
+        <div style="height:64px;border-radius:16px;background:linear-gradient(135deg,#C9A96E,#A8853A);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Gold Gradient</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">135deg → #C9A96E · #A8853A</div>
+      </div>
+      <div>
+        <div style="height:64px;border-radius:16px;background:linear-gradient(135deg,#7A1E30,#5C1523);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Button Primary</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">135deg → #7A1E30 · #5C1523</div>
+      </div>
+      <div>
+        <div style="height:64px;border-radius:16px;background:linear-gradient(90deg,#A8853A,#C9A96E);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Progress Fill</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">90deg → #A8853A · #C9A96E</div>
+      </div>
+      <div>
+        <div style="height:64px;border-radius:16px;background:linear-gradient(180deg,#5C1523,#4A0F1B);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Table Header</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">180deg → #5C1523 · #4A0F1B</div>
+      </div>
+      <div>
+        <div style="height:64px;border-radius:16px;background:radial-gradient(circle at 100% 0%,rgba(201,169,110,0.2),transparent 50%),linear-gradient(135deg,#FCF9F2,#F5EDD8);margin-bottom:8px;"></div>
+        <div style="font-size:11px;font-weight:800;color:#1C1008;">Page Background</div>
+        <div style="font-size:10px;font-weight:600;color:#8A7A72;font-family:monospace;">cream · radial gold glow</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 7. PATTERN ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٧</div>
+      <div>
+        <div class="section-title">النمط الإسلامي الهندسي</div>
+        <div class="section-sub">Arabesque Pattern — للترويسات والهيرو</div>
+      </div>
+    </div>
+    <div class="pattern-box">
+      <div class="pattern-box-inner">
+        <p style="font-size:18px;font-weight:900;margin-bottom:6px;">نمط الأرابيسك</p>
+        <p style="font-size:12px;">SVG inline · معيّن + مربع + دائرة · stroke: #C9A96E · opacity: 0.18</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 8. SPACING & RADIUS ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٨</div>
+      <div>
+        <div class="section-title">الحدود المستديرة والمسافات</div>
+        <div class="section-sub">Border Radius & Spacing</div>
+      </div>
+    </div>
+    <div class="radius-grid">
+      <div class="radius-box" style="border-radius:8px;"><div>8px<br>rounded-lg</div></div>
+      <div class="radius-box" style="border-radius:12px;"><div>12px<br>rounded-xl</div></div>
+      <div class="radius-box" style="border-radius:16px;"><div>16px<br>rounded-2xl</div></div>
+      <div class="radius-box" style="border-radius:20px;"><div>20px<br>rounded-[20px]</div></div>
+      <div class="radius-box" style="border-radius:24px;"><div>24px<br>rounded-3xl</div></div>
+      <div class="radius-box" style="border-radius:9999px;width:80px;"><div>∞<br>rounded-full</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 9. SHADOWS ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">٩</div>
+      <div>
+        <div class="section-title">الظلال</div>
+        <div class="section-sub">Shadow Scale</div>
+      </div>
+    </div>
+    <div class="shadow-grid">
+      <div class="shadow-box" style="box-shadow:0 1px 2px rgba(42,20,24,0.04),0 8px 24px -12px rgba(42,20,24,0.10);">
+        <span class="shadow-name">card</span>
+        <span style="font-size:10px;color:#C0B3AA;">بطاقة عادية</span>
+      </div>
+      <div class="shadow-box" style="box-shadow:0 1px 3px rgba(42,20,24,0.02),0 6px 16px -4px rgba(42,20,24,0.04),0 20px 40px -12px rgba(42,20,24,0.08);">
+        <span class="shadow-name">card-luxurious</span>
+        <span style="font-size:10px;color:#C0B3AA;">بطاقة فاخرة</span>
+      </div>
+      <div class="shadow-box" style="box-shadow:0 6px 16px -6px rgba(92,21,35,0.5);">
+        <span class="shadow-name">btn-primary</span>
+        <span style="font-size:10px;color:#C0B3AA;">زر أساسي</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 10. CSS VARIABLES ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">١٠</div>
+      <div>
+        <div class="section-title">متغيرات CSS</div>
+        <div class="section-sub">CSS Custom Properties — :root</div>
+      </div>
+    </div>
+    <div style="background:#1C1008;border-radius:20px;padding:24px;font-family:monospace;font-size:13px;line-height:2;overflow-x:auto;">
+      <span style="color:#7A6A58;">:root {</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--primary</span><span style="color:#fff;">:      </span><span style="color:#10b981;">#5C1523</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--primary-dark</span><span style="color:#fff;">: </span><span style="color:#10b981;">#4A0F1B</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--primary-light</span><span style="color:#fff;">:</span><span style="color:#10b981;">#7A1E30</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--gold</span><span style="color:#fff;">:         </span><span style="color:#10b981;">#C9A96E</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--gold-light</span><span style="color:#fff;">:   </span><span style="color:#10b981;">#DFC48E</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--gold-dark</span><span style="color:#fff;">:    </span><span style="color:#10b981;">#A8853A</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--cream</span><span style="color:#fff;">:        </span><span style="color:#10b981;">#FCF9F2</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--ink</span><span style="color:#fff;">:          </span><span style="color:#10b981;">#2A1418</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--muted</span><span style="color:#fff;">:        </span><span style="color:#10b981;">#8A7A72</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--card-2</span><span style="color:#fff;">:       </span><span style="color:#10b981;">#F5EDD8</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--text-strong</span><span style="color:#fff;">: </span><span style="color:#10b981;">#1C1008</span><span style="color:#7A6A58;">;</span><br>
+      &nbsp;&nbsp;<span style="color:#C9A96E;">--text-soft</span><span style="color:#fff;">:   </span><span style="color:#10b981;">#7A6A58</span><span style="color:#7A6A58;">;</span><br>
+      <span style="color:#7A6A58;">}</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    دليل هوية <strong>نظام إدارة التوجيه التربوي — قسم التربية البدنية</strong><br>
+    وزارة التربية والتعليم والتعليم العالي · دولة قطر · Design System v1.0
+  </div>
+
+</div>
+</body>
+</html>
