@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   manifest: "/manifest.json",
-  // صورة المعاينة تُولّد تلقائياً من app/opengraph-image.tsx و app/twitter-image.tsx
+  // صورة المعاينة ثابتة: public/og-image.png (تُولَّد عبر scripts/generate-og.mjs)
   openGraph: {
     type: "website",
     locale: "ar_QA",
@@ -23,11 +23,13 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: siteUrl,
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: TITLE }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/og-image.png"],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
