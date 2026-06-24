@@ -12,6 +12,7 @@ import { PrintButton, PrintHeader, PrintSignature } from "@/components/ui/PrintR
 import { BarChart3, Pencil, SlidersHorizontal, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { useActiveYear } from "@/hooks/useActiveYear";
+import { AiInsightPanel } from "@/components/ui/AiInsightPanel";
 
 export default function CoveragePage() {
   const { token, user } = useAuth();
@@ -102,6 +103,16 @@ export default function CoveragePage() {
       />
 
       <PrintHeader title="تقرير التغطية والمؤشرات" subtitle={`العام الدراسي ${YEAR}`} />
+
+      {/* ── تحليل ذكي بالذكاء الاصطناعي ── */}
+      {isAdmin && (
+        <AiInsightPanel
+          endpoint="/api/ai-analysis"
+          title="التحليل الذكي للأداء"
+          buttonLabel="حلّل أداء القسم بالذكاء الاصطناعي"
+          hint="ملخص تنفيذي وتوصيات لكل موجّه — من بيانات التغطية الحقيقية"
+        />
+      )}
 
       {/* الرسوم البيانية الإحصائية */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

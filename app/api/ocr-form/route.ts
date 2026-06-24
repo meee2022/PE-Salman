@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     const prompt = FORM_PROMPTS[formType] ?? FORM_PROMPTS.coordinator;
 
     const response = await client.messages.create({
-      model: "claude-opus-4-5",
+      model: "claude-opus-4-8",
       max_tokens: 2048,
       messages: [
         {

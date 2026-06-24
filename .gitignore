@@ -49,3 +49,6 @@ scratch/
 
 # Claude local settings
 .claude/settings.local.json
+
+# local dev server log
+.dev-server.log

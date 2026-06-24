@@ -11,6 +11,7 @@ import { COORDINATOR_TEMPLATE } from "@/components/coordinatorTemplate";
 import { formatCoordinatorMsg } from "@/lib/whatsapp";
 import { X } from "lucide-react";
 import { OcrUpload } from "@/components/ui/OcrUpload";
+import { AiFormSummary } from "@/components/ui/AiFormSummary";
 
 type Dom = { domain: string; indicator: string; recommendations?: string[]; notes?: string };
 
@@ -137,6 +138,17 @@ export default function CoordinatorFormDetail({ params }: { params: { id: string
           <OcrUpload formType="coordinator" onExtracted={handleOcrExtracted} />
         </div>
       )}
+      <div className="max-w-5xl mx-auto">
+        <AiFormSummary
+          formType="coordinator"
+          formData={{
+            schoolName: form.schoolName, coordinatorName: form.coordinatorName,
+            supervisorName: form.supervisorName, subject: form.subject, date: form.date,
+            domains: domains.map((d) => ({ domain: d.domain, indicator: d.indicator, recommendations: d.recommendations ?? [] })),
+            generalNote: general,
+          }}
+        />
+      </div>
       <div className="card-luxurious p-6 sm:p-12 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-5xl mx-auto" style={{ background: "#fff" }}>
         <Header title="استمارة الإشراف على أداء المنسق" />
         <div className="space-y-3">

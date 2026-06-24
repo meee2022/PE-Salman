@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/components/AuthProvider";
+import { ForcePasswordChange } from "@/components/ui/ForcePasswordChange";
 
 function supervisorHome(supervisorId?: string) {
   return supervisorId ? `/dashboard/supervisors/${supervisorId}` : "/dashboard/settings";
@@ -56,6 +57,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="w-10 h-10 rounded-full border-4 border-gold/30 border-t-gold animate-spin" />
       </div>
     );
+  }
+
+  // بوابة إجبارية: تغيير كلمة المرور الافتراضية قبل أي استخدام
+  if (user.mustChangePassword) {
+    return <ForcePasswordChange />;
   }
 
   return <AppShell>{children}</AppShell>;

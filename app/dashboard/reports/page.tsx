@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { useActiveYear } from "@/hooks/useActiveYear";
 import { exportToExcel } from "@/lib/exportExcel";
+import { AiInsightPanel } from "@/components/ui/AiInsightPanel";
 import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
 } from "recharts";
@@ -214,6 +215,16 @@ export default function ReportsPage() {
           />
         </StaggerItem>
       </Stagger>
+
+      {/* ── مولّد التقرير الرسمي بالذكاء الاصطناعي ── */}
+      <FadeIn delay={0.02}>
+        <AiInsightPanel
+          endpoint="/api/ai-report"
+          title="التقرير الرسمي الذكي"
+          buttonLabel="أنشئ تقريرًا رسميًا بالذكاء الاصطناعي"
+          hint="تقرير مؤسسي جاهز للطباعة والرفع للإدارة — من بيانات القسم الحقيقية"
+        />
+      </FadeIn>
 
       {/* ① بوابة التقارير التفصيلية ───────────────────────────────── */}
       <FadeIn delay={0.02}>

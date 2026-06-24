@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { GlobalSearch } from "@/components/ui/GlobalSearch";
+import { AiAssistant } from "@/components/ui/AiAssistant";
 import { useActiveYear } from "@/hooks/useActiveYear";
 
 interface NavItem { href: string; label: string; icon: LucideIcon }
@@ -80,6 +81,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <BottomNav primary={primary} hasMore={secondary.length > 0} onMore={() => setMoreOpen(true)} />
+
+      <AiAssistant />
 
       {moreOpen && <MoreSheet items={secondary} onClose={() => setMoreOpen(false)} />}
     </div>

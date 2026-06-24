@@ -14,6 +14,7 @@ import { RATING_LEVELS, TEACHER_TEMPLATE, FOLLOWUP_OPTIONS, BROADCAST_OPTIONS } 
 import { formatTeacherMsg } from "@/lib/whatsapp";
 import { ArrowRight, Save, CheckCircle2, ShieldAlert, FileSignature, Plus, X, Check, Send } from "lucide-react";
 import { OcrUpload } from "@/components/ui/OcrUpload";
+import { AiFormSummary } from "@/components/ui/AiFormSummary";
 
 type Crit = { text: string; rating: string };
 type Dom = { domain: string; criteria: Crit[]; recommendations: string[] };
@@ -163,6 +164,17 @@ export default function TeacherFormDetailPage({ params }: { params: { id: string
           <PrintButton />
         </div>
       </div>
+      {form && (
+        <AiFormSummary
+          formType="teacher"
+          formData={{
+            teacherName: form.teacherName, schoolName: form.schoolName,
+            supervisorName: form.supervisorName, date: form.date,
+            followUpType: form.followUpType, followUpOptions: followUp,
+            domains, generalNote: general,
+          }}
+        />
+      )}
       {form && (
         <WhatsAppSendModal
           open={sendOpen}
