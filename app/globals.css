@@ -323,6 +323,10 @@ body {
   /* توسيع منطقة المحتوى */
   main, main > div { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
 
+  /* مهم لمطابقة شكل الاستمارة: أي حاوية بعرض محدود (max-w-5xl…) تملأ عرض A4
+     حتى لا تُعصر الأعمدة ويتغيّر الشكل عند الطباعة */
+  main [class*="max-w-"] { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+
   /* بطاقات هادئة للطباعة */
   .card {
     box-shadow: none !important;
@@ -330,6 +334,18 @@ body {
     break-inside: avoid;
     background: #fff !important;
   }
+
+  /* البطاقة الفاخرة (حاوية الاستمارات): بلا ظل/زوايا/حشو لتطابق الورق تمامًا */
+  .card-luxurious {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* جداول الاستمارات تملأ العرض وتُبقي نِسَب الأعمدة كما صُمّمت */
+  .card-luxurious table { width: 100% !important; }
 
   /* الجداول: ترويسة عنابية تبقى، نص أسود، تجنّب قطع الصفوف */
   .data-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
