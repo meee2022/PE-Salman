@@ -182,6 +182,41 @@ export default defineSchema({
   })
     .index("by_supervisor_year", ["supervisorId", "academicYear"]),
 
+  // ─── زيارات كل مدرسة لكل موجه (من ملف الاستمارات والزيارات) ─────────
+  schoolVisits: defineTable({
+    academicYear: v.string(),
+    supervisorId: v.id("supervisors"),
+    schoolName: v.string(),
+    schoolNameKey: v.string(),        // اسم منقّح للمطابقة
+    total: v.number(),                // إجمالي الزيارات/الاستمارات لهذه المدرسة
+    teacherForms: v.number(),
+    examApproval: v.number(),
+    examFollow: v.number(),
+    coordForms: v.number(),
+  })
+    .index("by_supervisor_year", ["supervisorId", "academicYear"])
+    .index("by_year", ["academicYear"]),
+
+  // ─── خطة الموجه: تصنيف المنسقين والمعلمين (من ملف خطة الموجة) ───────
+  supervisorPlans: defineTable({
+    academicYear: v.string(),
+    supervisorId: v.id("supervisors"),
+    // تصنيف المنسقين
+    coordSelfDev: v.number(),    // تطوير ذاتي
+    coordGeneral: v.number(),    // دعم عام
+    coordIntensive: v.number(),  // دعم مكثف
+    coordNew: v.number(),        // منسق جديد
+    coordNone: v.number(),       // لا يوجد
+    // تصنيف المعلمين
+    teachersTotal: v.number(),
+    teachIntensive: v.number(),  // مكثف
+    teachGeneral: v.number(),    // عام
+    teachSelfDev: v.number(),    // تطوير ذاتي
+    teachNew: v.number(),        // مستجد
+  })
+    .index("by_supervisor_year", ["supervisorId", "academicYear"])
+    .index("by_year", ["academicYear"]),
+
   // ─── مؤشرات التغطية (KPIs) ────────────────────────────────────────
   coverageKpis: defineTable({
     supervisorId: v.id("supervisors"),

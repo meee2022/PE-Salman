@@ -151,6 +151,26 @@ export const detail = query({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([month, codes]) => ({ month, ...codes } as { month: string } & Record<string, number>));
 
+    // سجل زيارات المدارس (من ملف الاستمارات والزيارات) — قائمة مباشرة مرتّبة
+    const visitsRows = await ctx.db
+      .query("schoolVisits")
+      .withIndex("by_supervisor_year", (q) =>
+        q.eq("supervisorId", args.id).eq("academicYear", args.academicYear))
+      .collect();
+    const schoolVisitsList = visitsRows
+      .map((r) => ({
+        schoolName: r.schoolName, total: r.total, teacherForms: r.teacherForms,
+        examApproval: r.examApproval, examFollow: r.examFollow, coordForms: r.coordForms,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    // خطة الموجه: تصنيف المنسقين والمعلمين
+    const plan = await ctx.db
+      .query("supervisorPlans")
+      .withIndex("by_supervisor_year", (q) =>
+        q.eq("supervisorId", args.id).eq("academicYear", args.academicYear))
+      .first();
+
     return {
       supervisor,
       coverage,
@@ -161,6 +181,8 @@ export const detail = query({
       liveFormsCount,
       liveFormsSubmitted,
       schoolLastVisit,
+      schoolVisitsList,
+      plan,
       monthlyActivity,
     };
   },

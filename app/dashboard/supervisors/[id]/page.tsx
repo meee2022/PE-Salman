@@ -74,11 +74,13 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
 
   const { supervisor: sup, coverage, activity, formTotals, schools,
           liveFormsList = [], liveFormsCount = 0, liveFormsSubmitted = 0,
-          schoolLastVisit = {}, monthlyActivity = [] } = data as typeof data & {
+          schoolLastVisit = {}, schoolVisitsList = [], plan = null, monthlyActivity = [] } = data as typeof data & {
     liveFormsList?: { _id: string; schoolName: string; coordinatorName: string; date: string; status: string }[];
     liveFormsCount?: number;
     liveFormsSubmitted?: number;
     schoolLastVisit?: Record<string, string>;
+    schoolVisitsList?: { schoolName: string; total: number; teacherForms: number; examApproval: number; examFollow: number; coordForms: number }[];
+    plan?: null | { coordSelfDev: number; coordGeneral: number; coordIntensive: number; coordNew: number; coordNone: number; teachersTotal: number; teachIntensive: number; teachGeneral: number; teachSelfDev: number; teachNew: number };
     monthlyActivity?: ({ month: string } & Record<string, number>)[];
   };
 
@@ -428,6 +430,95 @@ export default function SupervisorDetailPage({ params }: { params: { id: string 
         )}
       </div>
 
+      {/* ── خطة الموجه: تصنيف المنسقين والمعلمين ── */}
+      {plan && (plan.teachersTotal > 0 || plan.coordGeneral + plan.coordSelfDev + plan.coordIntensive + plan.coordNew + plan.coordNone > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-in" style={{ animationDelay: "220ms" }}>
+          {/* تصنيف المنسقين */}
+          <div className="card-luxurious p-6 bg-white/70 backdrop-blur-md">
+            <h2 className="section-title text-[#1C1008] font-black mb-1">تصنيف المنسقين</h2>
+            <p className="text-[11px] text-[#A89A92] font-semibold mb-4">
+              إجمالي {plan.coordSelfDev + plan.coordGeneral + plan.coordIntensive + plan.coordNew + plan.coordNone} منسقاً
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                ["تطوير ذاتي", plan.coordSelfDev, "box-emerald"],
+                ["دعم عام", plan.coordGeneral, "box-sky"],
+                ["دعم مكثف", plan.coordIntensive, "box-amber"],
+                ["منسق جديد", plan.coordNew, "box-violet"],
+                ["لا يوجد", plan.coordNone, "box-stone"],
+              ].map(([label, val, c]) => (
+                <ClassBox key={label as string} tone={c as string} label={label as string} val={val as number} />
+              ))}
+            </div>
+          </div>
+          {/* تصنيف المعلمين */}
+          <div className="card-luxurious p-6 bg-white/70 backdrop-blur-md">
+            <h2 className="section-title text-[#1C1008] font-black mb-1">تصنيف المعلمين</h2>
+            <p className="text-[11px] text-[#A89A92] font-semibold mb-4">إجمالي {plan.teachersTotal} معلماً/معلمة</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                ["مكثف", plan.teachIntensive, "box-rose"],
+                ["عام", plan.teachGeneral, "box-sky"],
+                ["تطوير ذاتي", plan.teachSelfDev, "box-emerald"],
+                ["مستجد", plan.teachNew, "box-amber"],
+              ].map(([label, val, c]) => (
+                <ClassBox key={label as string} tone={c as string} label={label as string} val={val as number} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── سجل الزيارات حسب المدرسة (من ملف الاستمارات والزيارات) ── */}
+      {schoolVisitsList.length > 0 && (
+        <div className="glass-table-container animate-in" style={{ animationDelay: "250ms" }}>
+          <div className="px-6 py-4 flex items-center justify-between border-b border-black/[0.04] bg-white/50">
+            <div>
+              <h2 className="section-title text-[#1C1008] font-black">سجل الزيارات حسب المدرسة</h2>
+              <p className="text-[11px] text-[#8A7A72] font-semibold mt-0.5">عدد الاستمارات والزيارات المنفّذة في كل مدرسة</p>
+            </div>
+            <span className="pill bg-primary/5 text-primary border border-primary/10 font-bold text-xs font-sans">
+              {schoolVisitsList.reduce((s, r) => s + r.total, 0)} زيارة · {schoolVisitsList.length} مدرسة
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="glass-table">
+              <thead>
+                <tr>
+                  <th className="text-center">#</th>
+                  <th className="text-right">المدرسة</th>
+                  <th className="text-center">إجمالي الزيارات</th>
+                  <th className="text-center">استمارات المعلمين</th>
+                  <th className="text-center">اعتماد الاختبارات</th>
+                  <th className="text-center">متابعة التنفيذ</th>
+                  <th className="text-center">متابعة المنسقين</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schoolVisitsList.map((r, i) => (
+                  <tr key={i} className="group">
+                    <td className="text-center text-xs font-bold text-[#A89A92] font-sans">{i + 1}</td>
+                    <td className="font-bold text-[#2A1418]">
+                      <div className="flex items-center gap-3">
+                        <span className="icon-orb !w-9 !h-9 bg-primary/5 text-primary group-hover:scale-105 transition-transform"><School size={15} /></span>
+                        {r.schoolName}
+                      </div>
+                    </td>
+                    <td className="text-center">
+                      <span className="inline-flex items-center justify-center min-w-8 px-2 py-1 rounded-xl text-[12px] font-black text-white bg-gradient-to-l from-[#5C1523] to-[#4A0F1B] font-sans">{r.total}</span>
+                    </td>
+                    <td className="text-center text-xs font-bold text-[#6b5a52] font-sans">{r.teacherForms || "—"}</td>
+                    <td className="text-center text-xs font-bold text-[#6b5a52] font-sans">{r.examApproval || "—"}</td>
+                    <td className="text-center text-xs font-bold text-[#6b5a52] font-sans">{r.examFollow || "—"}</td>
+                    <td className="text-center text-xs font-bold text-[#6b5a52] font-sans">{r.coordForms || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <PrintSignature />
     </div>
   );
@@ -458,6 +549,25 @@ function CodeGroup({ title, codes, codeVal, tone }: {
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+// بطاقة تصنيف صغيرة بألوان حرفية (يلتقطها Tailwind)
+const BOX_TONES: Record<string, { box: string; num: string }> = {
+  "box-emerald": { box: "bg-emerald-50/60 border-emerald-200/60", num: "text-emerald-700" },
+  "box-sky":     { box: "bg-sky-50/60 border-sky-200/60",         num: "text-sky-700" },
+  "box-amber":   { box: "bg-amber-50/60 border-amber-200/60",     num: "text-amber-700" },
+  "box-violet":  { box: "bg-violet-50/60 border-violet-200/60",   num: "text-violet-700" },
+  "box-stone":   { box: "bg-stone-100/70 border-stone-200/70",    num: "text-stone-600" },
+  "box-rose":    { box: "bg-rose-50/60 border-rose-200/60",       num: "text-rose-700" },
+};
+function ClassBox({ tone, label, val }: { tone: string; label: string; val: number }) {
+  const t = BOX_TONES[tone] ?? BOX_TONES["box-stone"];
+  return (
+    <div className={`rounded-2xl p-3 text-center border ${t.box}`}>
+      <div className={`text-2xl font-black font-sans ${t.num}`}>{val}</div>
+      <div className="text-[11px] font-bold text-[#6b5a52] mt-0.5">{label}</div>
     </div>
   );
 }
