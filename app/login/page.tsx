@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { Dumbbell, User, Lock, LogIn, Loader2 } from "lucide-react";
+import { Dumbbell, User, Lock, LogIn, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -75,8 +76,17 @@ export default function LoginPage() {
             <label className="block text-sm font-semibold text-[#2A1418] mb-1.5">كلمة المرور</label>
             <div className="relative">
               <Lock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B0A298]" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr"
-                className="field pr-10 text-left" placeholder="••••••••" />
+              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr"
+                className="field pr-10 pl-10 text-left" placeholder="••••••••" />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                title={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A298] hover:text-primary transition-colors"
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
             </div>
           </div>
 

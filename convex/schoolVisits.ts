@@ -9,6 +9,7 @@ export const clearAndBulkImport = mutation({
     rows: v.array(
       v.object({
         supervisorId: v.id("supervisors"),
+        schoolId: v.optional(v.id("schools")),
         schoolName: v.string(),
         schoolNameKey: v.string(),
         total: v.number(),

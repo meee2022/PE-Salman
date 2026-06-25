@@ -9,6 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 import {
   Settings, KeyRound, Users, ShieldCheck, RefreshCw, Check,
   UserPlus, X, History, FileText, CalendarCog, Database, UserCircle,
+  Eye, EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -176,6 +177,7 @@ function ChangePasswordCard({ token, onDone }: { token: string; onDone: (m: stri
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -200,9 +202,23 @@ function ChangePasswordCard({ token, onDone }: { token: string; onDone: (m: stri
       </div>
       {err && <div className="bg-red-500/5 text-red-700 text-xs font-bold rounded-xl px-4 py-2.5 border border-red-500/10">{err}</div>}
       <div className="space-y-3">
-        <input type="password" value={oldP} onChange={e => setOldP(e.target.value)} className="field font-semibold" placeholder="كلمة المرور الحالية" dir="ltr" />
-        <input type="password" value={newP} onChange={e => setNewP(e.target.value)} className="field font-semibold" placeholder="كلمة المرور الجديدة" dir="ltr" />
-        <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className="field font-semibold" placeholder="تأكيد كلمة المرور" dir="ltr" />
+        {[
+          { val: oldP, set: setOldP, ph: "كلمة المرور الحالية" },
+          { val: newP, set: setNewP, ph: "كلمة المرور الجديدة" },
+          { val: confirm, set: setConfirm, ph: "تأكيد كلمة المرور" },
+        ].map((f, i) => (
+          <div key={i} className="relative">
+            <input type={showPwd ? "text" : "password"} value={f.val} onChange={e => f.set(e.target.value)} className="field font-semibold pl-10" placeholder={f.ph} dir="ltr" />
+            {i === 0 && (
+              <button type="button" onClick={() => setShowPwd(v => !v)}
+                aria-label={showPwd ? "إخفاء كلمات المرور" : "إظهار كلمات المرور"}
+                title={showPwd ? "إخفاء" : "إظهار"}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A298] hover:text-primary transition-colors">
+                {showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            )}
+          </div>
+        ))}
       </div>
       <button type="submit" disabled={busy || !oldP || !newP} className="btn-primary w-full justify-center text-xs font-bold !py-3">
         {busy ? "جارٍ الحفظ..." : "تحديث كلمة المرور"}
