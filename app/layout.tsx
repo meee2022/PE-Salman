@@ -2,10 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 
-// رابط الموقع للروابط المطلقة (صورة المعاينة). اضبط NEXT_PUBLIC_SITE_URL على الدومين الحقيقي.
+// رابط الموقع للروابط المطلقة (صورة المعاينة).
+// الأولوية: المتغيّر اليدوي ← دومين الإنتاج الثابت على Vercel ← رابط النشر المؤقت ← محلي.
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3100");
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` :
+   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+   "http://localhost:3100");
 
 const TITLE = "نظام إدارة التوجيه التربوي - التربية البدنية";
 const DESCRIPTION = "إدارة التوجيه التربوي لقسم التربية البدنية - وزارة التربية والتعليم - قطر";
