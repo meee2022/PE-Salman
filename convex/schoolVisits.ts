@@ -32,6 +32,29 @@ export const clearAndBulkImport = mutation({
   },
 });
 
+// كل صفوف السنة (للمطابقة من سكربت الاستيراد)
+export const listAll = query({
+  args: { academicYear: v.string() },
+  handler: async (ctx, args) =>
+    ctx.db
+      .query("schoolVisits")
+      .withIndex("by_year", (q) => q.eq("academicYear", args.academicYear))
+      .collect(),
+});
+
+// ربط صفوف الزيارات بالمدارس الرسمية وتحديث الاسم الكامل
+export const relink = mutation({
+  args: {
+    updates: v.array(v.object({ id: v.id("schoolVisits"), schoolId: v.id("schools"), schoolName: v.string() })),
+  },
+  handler: async (ctx, args) => {
+    for (const u of args.updates) {
+      await ctx.db.patch(u.id, { schoolId: u.schoolId, schoolName: u.schoolName });
+    }
+    return { updated: args.updates.length };
+  },
+});
+
 // زيارات موجه معيّن حسب المدرسة
 export const bySupervisor = query({
   args: { supervisorId: v.id("supervisors"), academicYear: v.string(), token: v.optional(v.string()) },

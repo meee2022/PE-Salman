@@ -186,6 +186,7 @@ export default defineSchema({
   schoolVisits: defineTable({
     academicYear: v.string(),
     supervisorId: v.id("supervisors"),
+    schoolId: v.optional(v.id("schools")),  // مربوط بالمدرسة الرسمية بعد المطابقة
     schoolName: v.string(),
     schoolNameKey: v.string(),        // اسم منقّح للمطابقة
     total: v.number(),                // إجمالي الزيارات/الاستمارات لهذه المدرسة
