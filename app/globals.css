@@ -20,7 +20,11 @@
   font-family: 'Cairo', sans-serif;
 }
 
-html { direction: rtl; }
+html {
+  direction: rtl;
+  -webkit-text-size-adjust: 100%;   /* يمنع تكبير النص التلقائي على iOS */
+  text-size-adjust: 100%;
+}
 
 body {
   background-color: var(--cream);
@@ -30,6 +34,26 @@ body {
     radial-gradient(circle at 0% 100%, rgba(92, 21, 35, 0.04) 0%, transparent 40%);
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: 100dvh;               /* يثبّت الارتفاع مع ظهور/اختفاء شريط العنوان */
+  overflow-x: hidden;               /* يمنع الاهتزاز الأفقي */
+  overscroll-behavior-y: contain;   /* يقلّل ارتداد التمرير */
+}
+
+/* ════════════ تحسينات الموبايل: ثبات + خط أكبر + safe-area ════════════ */
+@media (max-width: 640px) {
+  /* تكبير الخط قليلاً (كل المقاسات rem تتبعه) */
+  html { font-size: 16.5px; }
+
+  /* أهم إصلاح: منع زوم iOS عند الضغط على الحقول (الخط ≥ 16px) */
+  input, select, textarea, .field {
+    font-size: 16px !important;
+  }
+
+  /* مساحات آمنة لحواف الشاشة (النوتش) في الوضع الأفقي */
+  body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
 }
 
 /* ── Scrollbar ── */
