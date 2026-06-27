@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
+import { AiInsightPanel } from "@/components/ui/AiInsightPanel";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { MiniSparkline } from "@/components/ui/MiniSparkline";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -288,6 +289,20 @@ export default function DashboardPage() {
   // موجهون تحت 50% تغطية (تنبيهات)
   const lowPerformers = ranked.filter(r => r.coverageRate < 50).slice(0, 3);
 
+  // عناصر "يحتاج إجراء الآن"
+  const uncoveredSchools = coverage.reduce((s, r) => s + Math.max(0, (r.schoolsRequired - r.schoolsCovered)), 0);
+  const noFormsSups = coverage.filter(r => (r.formsCount ?? 0) === 0).length;
+  const actionItems = [
+    { n: uncoveredSchools, label: "مدرسة لم تُغطَّ بعد", href: "/dashboard/coverage", tone: "red" as const },
+    { n: lowCoverage, label: "موجّه تحت 75% تغطية", href: "/dashboard/coverage", tone: "amber" as const },
+    { n: noFormsSups, label: "موجّه بلا استمارات", href: "/dashboard/reports", tone: "primary" as const },
+  ].filter(x => x.n > 0);
+  const ACTION_TONE = {
+    red: "bg-red-50 border-red-200/70 text-red-700",
+    amber: "bg-amber-50 border-amber-200/70 text-amber-700",
+    primary: "bg-primary/5 border-primary/15 text-primary",
+  };
+
   return (
     <div className="space-y-7">
       {/* البانر الترحيبي الفاخر (The Hero Banner) */}
@@ -355,6 +370,36 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ملخّص تنفيذي ذكي — للأدمن */}
+      {["admin", "superadmin"].includes(user?.role ?? "") && (
+        <AiInsightPanel
+          endpoint="/api/ai-analysis"
+          title="الملخّص التنفيذي الذكي"
+          buttonLabel="اكتب ملخّص اليوم وأهم الإجراءات"
+          hint="حالة القسم وأبرز المتغيرات وأهم الإجراءات المطلوبة — من بيانات اليوم"
+        />
+      )}
+
+      {/* ── يحتاج إجراء الآن ── */}
+      {actionItems.length > 0 && (
+        <section className="card-luxurious p-5 bg-white/70 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="icon-orb !w-8 !h-8 bg-red-50 text-red-600"><AlertTriangle size={16} /></span>
+            <h2 className="text-sm font-black text-[#1C1008]">يحتاج إجراء الآن</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {actionItems.map((a, i) => (
+              <Link key={i} href={a.href}
+                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-transform hover:-translate-y-0.5 ${ACTION_TONE[a.tone]}`}>
+                <span className="text-2xl font-black font-sans">{a.n}</span>
+                <span className="text-xs font-bold leading-tight flex-1">{a.label}</span>
+                <ChevronLeft size={16} className="opacity-50" />
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* بطاقات مؤشرات الأداء السريعة (KPIs) */}
