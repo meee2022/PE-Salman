@@ -16,6 +16,7 @@ import {
 import { useActiveYear } from "@/hooks/useActiveYear";
 import { EXCEL_ACTIVITY_DATA } from "@/lib/excelActivityData";
 import { getWeekInfo } from "@/lib/weeklySchedule";
+import { exportToExcel } from "@/lib/exportExcel";
 
 type Code =
   | "OF" | "VS" | "CL" | "LV" | "SL" | "TR" | "MT" | "AC"
@@ -756,6 +757,20 @@ function AnnualSummary() {
 
       <div className="glass-table-container">
         <div className="flex items-center gap-2 px-5 py-2 border-b border-black/[0.04] bg-white/40 no-print">
+          <button
+            onClick={() => exportToExcel(
+              summaries as any[],
+              [
+                { key: "supervisor", label: "الموجه التربوي", value: (r: any) => r.supervisor?.name ?? "—" },
+                ...codes.map((c) => ({ key: c, label: CODE_MAP[c]?.label ?? c, value: (r: any) => (r[c] ?? 0) })),
+                { key: "schoolingDays", label: "أيام التمدرس", value: (r: any) => r.schoolingDays ?? 0 },
+              ],
+              `النشاط_السنوي_${YEAR}`
+            )}
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-100 transition-colors"
+          >
+            <FileDown size={13} /> تصدير Excel
+          </button>
           <span className="text-[10px] font-bold text-[#A89A92]">← مرّر يساراً لرؤية باقي الأعمدة</span>
           <div className="flex gap-0.5 mr-auto">
             {codes.map(c => <span key={c} className={`w-2 h-2 rounded-full ${CODE_MAP[c]?.chip ?? ""}`} title={CODE_MAP[c]?.label} />)}
