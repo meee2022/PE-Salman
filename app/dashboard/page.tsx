@@ -233,6 +233,7 @@ export default function DashboardPage() {
   const coverage      = useQuery(api.coverage.listByYear, token ? { academicYear: YEAR, token } : "skip");
   const schools       = useQuery(api.schools.list, token ? { academicYear: YEAR, token } : "skip");
   const monthlyData   = useQuery(api.activity.monthlyTotals, token ? { academicYear: YEAR, token } : "skip");
+  const fieldVisits   = useQuery(api.reports.fieldVisits, token ? { academicYear: YEAR, token } : "skip");
 
   // العام الماضي
   const prevYear = YEAR.split("-").map((y) => String(parseInt(y) - 1)).join("-");
@@ -302,6 +303,20 @@ export default function DashboardPage() {
     amber: "bg-amber-50 border-amber-200/70 text-amber-700",
     primary: "bg-primary/5 border-primary/15 text-primary",
   };
+
+  // حالة الاستمارات (مسوّدة/معتمدة) من الزيارات الميدانية
+  const fvList = fieldVisits ?? [];
+  const submittedForms = fvList.filter((f) => f.status === "submitted").length;
+  const draftForms = fvList.filter((f) => f.status === "draft").length;
+  const formsAll = fvList.length;
+  const submitPct = formsAll ? Math.round((submittedForms / formsAll) * 100) : 0;
+
+  // بيانات المخطط الشهري
+  const monthChart = (monthlyData ?? []).map((m) => ({
+    label: m.month.slice(5),
+    visits: m.visits, develop: m.develop, office: m.office,
+  }));
+  const monthMax = Math.max(1, ...monthChart.map((m) => m.visits + m.develop + m.office));
 
   return (
     <div className="space-y-7">
@@ -452,6 +467,58 @@ export default function DashboardPage() {
             />
           )}
         />
+      </section>
+
+      {/* ── المخطط الشهري + حالة الاستمارات ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* مخطط الزيارات الشهري */}
+        <div className="card-luxurious p-6 bg-white/70 backdrop-blur-md lg:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="section-title text-[#1C1008] font-black">النشاط الشهري للقسم</h2>
+            <div className="flex items-center gap-3">
+              {[["#5C1523", "زيارات"], ["#C9A96E", "تطوير"], ["#E8DECF", "مكتبي"]].map(([c, l]) => (
+                <span key={l} className="flex items-center gap-1.5 text-[10px] font-bold text-[#6b5a52]">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} /> {l}
+                </span>
+              ))}
+            </div>
+          </div>
+          {monthChart.length === 0 ? (
+            <p className="text-xs text-[#A89A92] py-10 text-center">لا توجد بيانات نشاط بعد لهذا العام.</p>
+          ) : (
+            <div className="flex items-end justify-around gap-2 h-44 mt-5">
+              {monthChart.map((m, i) => (
+                <div key={i} className="flex flex-col items-center flex-1 gap-1.5">
+                  <div className="flex items-end gap-0.5 h-36">
+                    <div className="w-2.5 rounded-t" style={{ height: `${Math.max(2, (m.visits / monthMax) * 144)}px`, background: "#5C1523" }} title={`زيارات ${m.visits}`} />
+                    <div className="w-2.5 rounded-t" style={{ height: `${Math.max(2, (m.develop / monthMax) * 144)}px`, background: "#C9A96E" }} title={`تطوير ${m.develop}`} />
+                    <div className="w-2.5 rounded-t" style={{ height: `${Math.max(2, (m.office / monthMax) * 144)}px`, background: "#E8DECF" }} title={`مكتبي ${m.office}`} />
+                  </div>
+                  <span className="text-[9.5px] font-bold text-[#A89A92] font-sans">{m.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* حالة الاستمارات */}
+        <div className="card-luxurious p-6 bg-white/70 backdrop-blur-md flex flex-col">
+          <h2 className="section-title text-[#1C1008] font-black mb-1">حالة الاستمارات</h2>
+          <p className="text-[11px] text-[#A89A92] font-semibold mb-4">إجمالي {formsAll} استمارة هذا العام</p>
+          <div className="flex items-center justify-center my-2">
+            <RingChart pct={submitPct} color="#1E9E6A" label="معتمدة" sub={`${submittedForms} استمارة`} size={104} />
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-auto">
+            <Link href="/dashboard/forms-center" className="rounded-2xl border border-emerald-200/70 bg-emerald-50 p-3 text-center hover:-translate-y-0.5 transition-transform">
+              <div className="text-2xl font-black font-sans text-emerald-700">{submittedForms}</div>
+              <div className="text-[11px] font-bold text-[#6b5a52]">معتمدة</div>
+            </Link>
+            <Link href="/dashboard/forms-center" className="rounded-2xl border border-amber-200/70 bg-amber-50 p-3 text-center hover:-translate-y-0.5 transition-transform">
+              <div className="text-2xl font-black font-sans text-amber-700">{draftForms}</div>
+              <div className="text-[11px] font-bold text-[#6b5a52]">مسوّدة</div>
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* ── مقارنة سنة بسنة ─────────────────────────────────────────── */}
