@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { firstMissing, missingMsg } from "@/lib/formValidation";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { PrintButton } from "@/components/ui/PrintReport";
@@ -123,7 +124,15 @@ export default function TeacherFormDetailPage({ params }: { params: { id: string
     show(dataUrl ? "تم حفظ التوقيع" : "تم مسح التوقيع");
   }
   async function submitForm() {
-    if (!form!.supervisorSignature || !form!.teacherSignature) { show("يلزم توقيع الموجه والمعلم أولاً"); return; }
+    const miss = firstMissing([
+      { value: form!.schoolName, label: "اسم المدرسة" },
+      { value: form!.teacherName, label: "اسم المعلم" },
+      { value: form!.subject, label: "المادة" },
+      { value: form!.date, label: "التاريخ" },
+      { value: domains, label: "تقييم جميع المؤشرات", ok: (d) => Array.isArray(d) && d.length > 0 && d.every((x: any) => (x.criteria ?? []).every((c: any) => c.rating)) },
+    ]);
+    if (miss) { show(missingMsg(miss), "error"); return; }
+    if (!form!.supervisorSignature || !form!.teacherSignature) { show("يلزم توقيع الموجه والمعلم أولاً", "error"); return; }
     await saveAll();
     await sign({ id, submit: true, token: token ?? undefined });
     show("تم اعتماد الاستمارة وإرسالها رسمياً");

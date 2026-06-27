@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Check } from "lucide-react";
+import { X, Check, AlertTriangle, Info } from "lucide-react";
 
 export function Modal({ title, onClose, children, wide }: {
   title: string; onClose: () => void; children: React.ReactNode; wide?: boolean;
@@ -85,12 +85,25 @@ export function SelectField<T extends string>({ label, value, onChange, options 
   );
 }
 
+type ToastTone = "success" | "error" | "warn" | "info";
+
 export function useToast() {
-  const [toast, setToast] = useState<string | null>(null);
-  const show = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2800); };
-  const node = toast ? (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in" style={{ zIndex: 9999 }}>
-      <Check size={16} /> {toast}
+  const [toast, setToast] = useState<{ m: string; tone: ToastTone } | null>(null);
+  // يدعم النغمة: show(msg) ناجح افتراضياً · show(msg, "error") خطأ أحمر
+  const show = (m: string, tone: ToastTone = "success") => {
+    setToast({ m, tone });
+    setTimeout(() => setToast(null), tone === "error" || tone === "warn" ? 4200 : 2800);
+  };
+  const TONE: Record<ToastTone, { bg: string; Icon: typeof Check }> = {
+    success: { bg: "bg-emerald-600", Icon: Check },
+    error: { bg: "bg-red-600", Icon: AlertTriangle },
+    warn: { bg: "bg-amber-500", Icon: AlertTriangle },
+    info: { bg: "bg-[#5C1523]", Icon: Info },
+  };
+  const t = toast ? TONE[toast.tone] : null;
+  const node = toast && t ? (
+    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 ${t.bg} text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 max-w-[92vw] text-center animate-in`} style={{ zIndex: 9999 }}>
+      <t.Icon size={16} className="shrink-0" /> {toast.m}
     </div>
   ) : null;
   return { show, node };

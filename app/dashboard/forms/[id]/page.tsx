@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/Modal";
+import { firstMissing, missingMsg } from "@/lib/formValidation";
 import { TopBar, Header, SectionBar, InfoRow, SigBlock, Footer, SubmitBar, NotAvailable, FormSpinner, NoteInput } from "@/components/visitFormUI";
 import { COORDINATOR_TEMPLATE } from "@/components/coordinatorTemplate";
 import { formatCoordinatorMsg } from "@/lib/whatsapp";
@@ -75,7 +76,15 @@ export default function CoordinatorFormDetail({ params }: { params: { id: string
     show(d ? "تم حفظ التوقيع" : "تم مسح التوقيع");
   }
   async function submitForm() {
-    if (!form!.supervisorSignature || !form!.coordinatorSignature) { show("يلزم توقيع الموجه والمنسق أولاً"); return; }
+    const miss = firstMissing([
+      { value: form!.schoolName, label: "اسم المدرسة" },
+      { value: form!.coordinatorName, label: "اسم المنسق" },
+      { value: form!.subject, label: "المادة" },
+      { value: form!.date, label: "التاريخ" },
+      { value: domains, label: "توصيات المجالات", ok: (d) => Array.isArray(d) && d.some((x: any) => (x.recommendations ?? []).length > 0) },
+    ]);
+    if (miss) { show(missingMsg(miss), "error"); return; }
+    if (!form!.supervisorSignature || !form!.coordinatorSignature) { show("يلزم توقيع الموجه والمنسق أولاً", "error"); return; }
     await saveAll(); await sign({ id, submit: true, token: token ?? undefined }); show("تم اعتماد الاستمارة رسمياً");
   }
 

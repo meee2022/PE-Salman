@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { firstMissing, missingMsg } from "@/lib/formValidation";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/Modal";
@@ -83,7 +84,13 @@ export default function PrincipalFormDetail({ params }: { params: { id: string }
   }
 
   async function submitForm() {
-    if (!form!.supervisorSignature) { show("يلزم توقيع الموجه أولاً"); return; }
+    const miss = firstMissing([
+      { value: form!.schoolName, label: "اسم المدرسة" },
+      { value: form!.principalName, label: "اسم مدير المدرسة" },
+      { value: form!.date, label: "التاريخ" },
+    ]);
+    if (miss) { show(missingMsg(miss), "error"); return; }
+    if (!form!.supervisorSignature) { show("يلزم توقيع الموجه أولاً", "error"); return; }
     await saveAll();
     await sign({ id, submit: true, token: token ?? undefined });
     show("تم اعتماد الاستمارة رسمياً");
