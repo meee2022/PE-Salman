@@ -103,7 +103,7 @@ export default function ExamFollowupDetail({ params }: { params: { id: string } 
           <OcrUpload formType="examFollowup" onExtracted={handleOcrExtracted} />
         </div>
       )}
-      <div className="card-luxurious p-6 sm:p-12 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-5xl mx-auto" style={{ background: "#fff" }}>
+      <div data-pdf-root className="card-luxurious p-6 sm:p-12 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-5xl mx-auto" style={{ background: "#fff" }}>
         <Header title="استمارة متابعة تنفيذ الاختبار" />
         <div className="space-y-3">
           <SectionBar>المعلومات الأساسية</SectionBar>

@@ -8,6 +8,7 @@ import { firstMissing, missingMsg } from "@/lib/formValidation";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { PrintButton } from "@/components/ui/PrintReport";
+import { PdfButton } from "@/components/ui/PdfButton";
 import { WhatsAppSendModal } from "@/components/ui/WhatsAppSendModal";
 import { SignaturePad } from "@/components/ui/SignaturePad";
 import { useToast } from "@/components/ui/Modal";
@@ -170,6 +171,7 @@ export default function TeacherFormDetailPage({ params }: { params: { id: string
             </button>
           )}
           {!locked && <OcrUpload formType="teacher" onExtracted={handleOcrExtracted} />}
+          <PdfButton filename="استمارة-المعلم" label="تصدير PDF مطابق" />
           <PrintButton />
         </div>
       </div>
@@ -196,7 +198,7 @@ export default function TeacherFormDetailPage({ params }: { params: { id: string
         />
       )}
 
-      <div className="card-luxurious p-6 sm:p-12 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-5xl mx-auto" style={{ background: "#fff" }}>
+      <div data-pdf-root className="card-luxurious p-6 sm:p-12 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-5xl mx-auto" style={{ background: "#fff" }}>
         {/* ترويسة */}
         <div className="flex items-center justify-between gap-4 border-b-2 border-[#5C1523] pb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}

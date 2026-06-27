@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PrintButton } from "@/components/ui/PrintReport";
+import { PdfButton } from "@/components/ui/PdfButton";
 import { WhatsAppSendModal } from "@/components/ui/WhatsAppSendModal";
 import { SignaturePad } from "@/components/ui/SignaturePad";
 import { ArrowRight, Save, CheckCircle2, ShieldAlert, FileSignature, Plus, Send } from "lucide-react";
@@ -42,7 +43,8 @@ export function TopBar({
               إرسال
             </button>
           )}
-          <PrintButton />
+          <PdfButton filename="استمارة" label="تصدير PDF مطابق" />
+          <PrintButton label="طباعة" />
         </div>
       </div>
       {sendConfig && (

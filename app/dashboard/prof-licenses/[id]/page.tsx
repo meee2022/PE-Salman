@@ -360,6 +360,7 @@ export default function ProfLicenseDetail({ params }: { params: { id: string } }
       <TopBar back="/dashboard/prof-licenses" locked={locked} onSave={saveAll} saving={saving} sendConfig={sendConfig} />
 
       <div
+        data-pdf-root
         className="card-luxurious p-6 sm:p-10 space-y-8 bg-white border-2 border-gold/15 shadow-2xl relative animate-in print:p-0 print:border-none print:shadow-none max-w-6xl mx-auto"
         style={{ background: "#fff" }}
       >
