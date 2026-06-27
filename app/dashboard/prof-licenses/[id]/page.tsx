@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { firstMissing, missingMsg } from "@/lib/formValidation";
+import { AiFormSummary } from "@/components/ui/AiFormSummary";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/Modal";
@@ -536,6 +537,7 @@ export default function ProfLicenseDetail({ params }: { params: { id: string } }
         <Footer code={form.formVariant === "1-3" ? "نموذج(1-3)" : form.formVariant === "5-1" ? "نموذج(5-1)" : "نموذج(3-1)"} />
       </div>
 
+      {form ? <div className="no-print max-w-5xl mx-auto mb-3"><AiFormSummary formType="profLicense" formData={form} /></div> : null}
       {!locked && <SubmitBar onSubmit={submitForm} label="اعتماد وإرسال استمارة الرخصة المهنية رسمياً" />}
       {toast}
     </div>

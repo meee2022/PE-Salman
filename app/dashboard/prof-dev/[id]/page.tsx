@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { firstMissing, missingMsg } from "@/lib/formValidation";
+import { AiFormSummary } from "@/components/ui/AiFormSummary";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/Modal";
@@ -219,6 +220,7 @@ export default function ProfDevDetail({ params }: { params: { id: string } }) {
         </div>
         <Footer code="ES-ESA-P11-F4" />
       </div>
+      {form ? <div className="no-print max-w-5xl mx-auto mb-3"><AiFormSummary formType="profDev" formData={form} /></div> : null}
       {!locked && <SubmitBar onSubmit={submitForm} label="اعتماد وإرسال الاستمارة رسمياً" />}
       {toast}
     </div>

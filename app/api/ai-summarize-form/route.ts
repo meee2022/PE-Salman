@@ -21,6 +21,8 @@ const FORM_LABELS: Record<string, string> = {
   profDev: "جلسة تطوير مهني",
   principal: "متابعة مدير المدرسة",
   deputy: "متابعة النائب الأكاديمي",
+  examArbitration: "تحكيم الاختبار العملي",
+  profLicense: "تقييم الرخصة المهنية",
 };
 
 export async function POST(req: NextRequest) {
