@@ -21,15 +21,16 @@ interface NavItem { href: string; label: string; icon: LucideIcon }
 
 function buildNav(role?: string, supervisorId?: string) {
   if (role === "supervisor") {
-    const home = supervisorId ? `/dashboard/supervisors/${supervisorId}` : "/dashboard/settings";
+    const profile = supervisorId ? `/dashboard/supervisors/${supervisorId}` : "/dashboard/settings";
     return {
       primary: [
-        { href: home, label: "ملفي", icon: UserCircle },
-        { href: "/dashboard/teachers", label: "المعلمون", icon: Users },
+        { href: "/dashboard", label: "الرئيسية", icon: Home },
+        { href: profile, label: "ملفي", icon: UserCircle },
         { href: "/dashboard/activity", label: "النشاط", icon: CalendarDays },
         { href: "/dashboard/forms-center", label: "الاستمارات", icon: ClipboardList },
       ] as NavItem[],
       secondary: [
+        { href: "/dashboard/teachers", label: "المعلمون", icon: Users },
         { href: "/dashboard/remote", label: "التعلم عن بعد", icon: GraduationCap },
         { href: "/dashboard/compliance", label: "المواثيق والالتزام", icon: ShieldCheck },
         { href: "/dashboard/settings", label: "الإعدادات", icon: Settings },

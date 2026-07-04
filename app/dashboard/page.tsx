@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
 import { AiInsightPanel } from "@/components/ui/AiInsightPanel";
+import { SupervisorHome } from "@/components/SupervisorHome";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { MiniSparkline } from "@/components/ui/MiniSparkline";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -254,6 +255,9 @@ export default function DashboardPage() {
       setGreeting("مساء الخير والتميّز والرفعة 🌙");
     }
   }, []);
+
+  // الموجّه يرى لوحته الخاصة به بدل لوحة الأدمن
+  if (user?.role === "supervisor") return <SupervisorHome />;
 
   const loading = supervisors === undefined || coverage === undefined || schools === undefined;
   if (loading) return <Loading />;

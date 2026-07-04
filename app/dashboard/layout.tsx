@@ -12,6 +12,7 @@ function supervisorHome(supervisorId?: string) {
 
 function isAllowedForSupervisor(pathname: string, home: string) {
   return (
+    pathname === "/dashboard" ||
     pathname === home ||
     pathname === "/dashboard/settings" ||
     pathname.startsWith("/dashboard/forms") ||
