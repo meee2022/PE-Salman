@@ -8,7 +8,7 @@ import { api } from "@/convex/_generated/api";
 import {
   Home, Users, School, CalendarDays, BarChart3, ClipboardList,
   UserSearch, GraduationCap, Settings, Dumbbell, MoreHorizontal,
-  LogOut, X, ChevronDown, UserCircle, ShieldCheck, FileBarChart2, BookOpen,
+  LogOut, X, ChevronDown, UserCircle, ShieldCheck, Clock, FileBarChart2, BookOpen,
   Search, Bell,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -32,6 +32,7 @@ function buildNav(role?: string, supervisorId?: string) {
       secondary: [
         { href: "/dashboard/teachers", label: "المعلمون", icon: Users },
         { href: "/dashboard/remote", label: "التعلم عن بعد", icon: GraduationCap },
+        { href: "/dashboard/leaves", label: "الاستئذان", icon: Clock },
         { href: "/dashboard/compliance", label: "المواثيق والالتزام", icon: ShieldCheck },
         { href: "/dashboard/settings", label: "الإعدادات", icon: Settings },
       ] as NavItem[],
@@ -52,6 +53,7 @@ function buildNav(role?: string, supervisorId?: string) {
       { href: "/dashboard/interviews", label: "المقابلات", icon: UserSearch },
       { href: "/dashboard/remote", label: "التعلم عن بعد", icon: GraduationCap },
       { href: "/dashboard/teachers", label: "المعلمون", icon: Users },
+      { href: "/dashboard/leaves", label: "الاستئذان", icon: Clock },
       { href: "/dashboard/compliance", label: "المواثيق والالتزام", icon: ShieldCheck },
       { href: "/dashboard/settings", label: "الإعدادات", icon: Settings },
     ] as NavItem[],

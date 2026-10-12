@@ -23,6 +23,7 @@ import type * as examArbitrationForms from "../examArbitrationForms.js";
 import type * as examFollowupForms from "../examFollowupForms.js";
 import type * as examForms from "../examForms.js";
 import type * as interviews from "../interviews.js";
+import type * as leaves from "../leaves.js";
 import type * as meetingForms from "../meetingForms.js";
 import type * as newTeacherPlans from "../newTeacherPlans.js";
 import type * as operationalPlans from "../operationalPlans.js";
@@ -63,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   examFollowupForms: typeof examFollowupForms;
   examForms: typeof examForms;
   interviews: typeof interviews;
+  leaves: typeof leaves;
   meetingForms: typeof meetingForms;
   newTeacherPlans: typeof newTeacherPlans;
   operationalPlans: typeof operationalPlans;

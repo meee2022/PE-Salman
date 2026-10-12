@@ -127,7 +127,7 @@ async function main() {
         supervisorName: sup.name,
         academicYear: data.academicYear,
         logs: logArgs,
-        token: "SEED_BYPASS_TOKEN",
+        token: process.env.SEED_TOKEN,
       });
       console.log(`  [${sup.seq}] ${sup.name}: inserted=${result.inserted} updated=${result.updated}`);
       totalInserted += result.inserted || 0;
@@ -149,7 +149,7 @@ async function main() {
   try {
     const recomputed = await callMutation("activity:recomputeAllSummaries", {
       academicYear: data.academicYear,
-      token: "SEED_BYPASS_TOKEN",
+      token: process.env.SEED_TOKEN,
     });
     console.log("Summaries recomputed for supervisors:", recomputed);
   } catch (err) {

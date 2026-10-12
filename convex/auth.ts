@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
+import { userByToken, endSessions } from "./permissions";
 
 const DEFAULT_PASSWORD = "pe@2026";   // كلمة المرور الافتراضية الموحّدة للموجهين
 const ADMIN_PASSWORD = "admin123";    // كلمة مرور رئيس التوجيه
@@ -104,9 +105,10 @@ export const login = mutation({
     if (hash !== user.passwordHash) {
       return { ok: false as const, error: "كلمة المرور غير صحيحة" };
     }
+    // each login gets its own session, so other devices stay signed in
     const token = randomToken();
-    await ctx.db.patch(user._id, { token });
-    return { ok: true as const, token, user: publicUser({ ...user, token }) };
+    await ctx.db.insert("sessions", { userId: user._id, token });
+    return { ok: true as const, token, user: publicUser(user) };
   },
 });
 
@@ -114,12 +116,8 @@ export const login = mutation({
 export const me = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-    if (!user || !user.isActive) return null;
-    return publicUser(user);
+    const user = await userByToken(ctx, args.token);
+    return user ? publicUser(user) : null;
   },
 });
 
@@ -127,11 +125,17 @@ export const me = query({
 export const logout = mutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
+    // only this device's session ends
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+    if (session) { await ctx.db.delete(session._id); return; }
+    const legacy = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .first();
-    if (user) await ctx.db.patch(user._id, { token: undefined });
+    if (legacy) await ctx.db.patch(legacy._id, { token: undefined });
   },
 });
 
@@ -139,10 +143,7 @@ export const logout = mutation({
 export const changePassword = mutation({
   args: { token: v.string(), oldPassword: v.string(), newPassword: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
+    const user = await userByToken(ctx, args.token);
     if (!user) return { ok: false as const, error: "الجلسة منتهية" };
 
     const oldHash = await sha256(args.oldPassword + user.salt);
@@ -155,17 +156,16 @@ export const changePassword = mutation({
       passwordHash: await sha256(args.newPassword + salt),
       mustChangePassword: false,
     });
+    // a new password signs out every other device
+    await endSessions(ctx, user._id, args.token);
     return { ok: true as const };
   },
 });
 
 // ── إدارة المستخدمين (أدمن فقط) ───────────────────────────────────
 async function requireAdmin(ctx: any, token: string): Promise<Doc<"users"> | null> {
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_token", (q: any) => q.eq("token", token))
-    .first();
-  return user && (user.role === "admin" || user.role === "superadmin") && user.isActive ? user : null;
+  const user = await userByToken(ctx, token);
+  return user && (user.role === "admin" || user.role === "superadmin") ? user : null;
 }
 
 export const listUsers = query({
@@ -184,7 +184,8 @@ export const adminSetActive = mutation({
     const admin = await requireAdmin(ctx, args.token);
     if (!admin) throw new Error("غير مصرّح");
     if (admin._id === args.userId) throw new Error("لا يمكنك إيقاف حسابك");
-    await ctx.db.patch(args.userId, { isActive: args.isActive, ...(args.isActive ? {} : { token: undefined }) });
+    await ctx.db.patch(args.userId, { isActive: args.isActive });
+    if (!args.isActive) await endSessions(ctx, args.userId);
   },
 });
 
@@ -201,8 +202,8 @@ export const adminResetPassword = mutation({
       salt,
       passwordHash: await sha256(pass + salt),
       mustChangePassword: true,
-      token: undefined,
     });
+    await endSessions(ctx, args.userId);
     return { defaultPassword: pass };
   },
 });

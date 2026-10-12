@@ -20,6 +20,33 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_supervisor", ["supervisorId"]),
 
+  // Supervisor hourly permissions (monthly allowance) and casual leaves (yearly allowance in days).
+  // Allowances live in settings: "leave.limitHours", "leave.casualDays".
+  leavePermissions: defineTable({
+    supervisorId: v.id("supervisors"),
+    academicYear: v.string(),
+    kind: v.optional(v.literal("casual")), // omitted = hourly permission
+    date: v.string(),        // YYYY-MM-DD (start date for casual leave)
+    fromTime: v.optional(v.string()),    // HH:MM
+    toTime: v.optional(v.string()),      // HH:MM
+    minutes: v.number(),     // 0 for casual leave
+    days: v.optional(v.number()),        // casual leave only
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    reason: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_supervisor_year", ["supervisorId", "academicYear"])
+    .index("by_year", ["academicYear"]),
+
+  // One row per logged-in device, so one account can be used from several devices at once
+  sessions: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+  })
+    .index("by_token", ["token"])
+    .index("by_user", ["userId"]),
+
   // ─── الموجهون ────────────────────────────────────────────────────
   supervisors: defineTable({
     seq: v.number(),

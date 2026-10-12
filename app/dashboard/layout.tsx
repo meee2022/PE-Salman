@@ -27,6 +27,7 @@ function isAllowedForSupervisor(pathname: string, home: string) {
     pathname.startsWith("/dashboard/activity") ||
     pathname.startsWith("/dashboard/remote") ||
     pathname.startsWith("/dashboard/compliance") ||
+    pathname.startsWith("/dashboard/leaves") ||
     pathname.startsWith("/dashboard/plans") ||
     pathname.startsWith("/dashboard/deputy-principal") ||
     pathname.startsWith("/dashboard/principal-forms") ||

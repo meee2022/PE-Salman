@@ -7,7 +7,7 @@ import { readFileSync } from "fs";
 
 const APPLY = process.argv.includes("--apply");
 const YEAR = "2025-2026";
-const TOKEN = "SEED_BYPASS_TOKEN";
+const TOKEN = process.env.SEED_TOKEN;
 function convexUrl(){try{const m=readFileSync(".env.local","utf8").match(/NEXT_PUBLIC_CONVEX_URL\s*=\s*(.+)/);if(m)return m[1].trim();}catch{}return process.env.NEXT_PUBLIC_CONVEX_URL;}
 const client = new ConvexHttpClient(convexUrl());
 const norm=s=>(s??"").toString().replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[ً-ْٰ]/g,"").replace(/\s+/g," ").trim();

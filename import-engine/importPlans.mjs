@@ -9,7 +9,7 @@ import { readFileSync } from "fs";
 
 const APPLY = process.argv.includes("--apply");
 const YEAR = "2025-2026";
-const TOKEN = "SEED_BYPASS_TOKEN";
+const TOKEN = process.env.SEED_TOKEN;
 const FILE = "all files/خطة الموجة 2026.xlsx";
 
 function convexUrl() {
