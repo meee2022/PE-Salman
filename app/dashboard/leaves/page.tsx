@@ -47,7 +47,7 @@ export default function LeavesPage() {
   const [month, setMonth] = useState(today().slice(0, 7));
   const [focus, setFocus] = useState<string>("");            // admin: selected supervisor
   const [form, setForm] = useState({ date: today(), from: "", to: "", days: "1", reason: "" });
-  const [limitDraft, setLimitDraft] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
   if (rows === undefined || limits === undefined) {
@@ -59,6 +59,12 @@ export default function LeavesPage() {
   }
 
   type Row = (typeof rows)[number];
+  type LimitKey = keyof typeof limits;
+  // admin-editable allowances shown for the active tab
+  const controls: { key: LimitKey; title: string; note: string }[] = casual
+    ? [{ key: "casualDays", title: "رصيد الإجازة العارضة السنوي", note: "يوم لكل موجّه في السنة" }]
+    : [{ key: "hours", title: "الحد الشهري للاستئذان", note: "ساعات لكل موجّه في الشهر" },
+       { key: "perRequest", title: "أقصى مدة للاستئذان الواحد", note: "ساعات للمرة الواحدة" }];
   const amt = (r: Row) => (casual ? r.days ?? 0 : r.minutes);
   const total = (rs: Row[]) => rs.reduce((s, r) => s + amt(r), 0);
   const out = (n: number) => (casual ? String(Math.abs(n)) : fmt(n));
@@ -119,12 +125,12 @@ export default function LeavesPage() {
     } finally { setBusy(false); }
   }
 
-  async function saveLimit() {
-    const n = Number(limitDraft);
-    if (limitDraft.trim() === "" || !Number.isFinite(n) || n < 0) return show("يرجى إدخال رقم صحيح", "error");
+  async function saveLimit(key: LimitKey) {
+    const draft = drafts[key] ?? "", n = Number(draft);
+    if (draft.trim() === "" || !Number.isFinite(n) || n < 0) return show("يرجى إدخال رقم صحيح", "error");
     try {
-      await setLimit({ key: casual ? "casualDays" : "hours", value: n, token: token ?? undefined });
-      setLimitDraft(""); show("تم تحديث الحد");
+      await setLimit({ key, value: n, token: token ?? undefined });
+      setDrafts({ ...drafts, [key]: "" }); show("تم تحديث الحد");
     } catch { show("تعذّر تحديث الحد", "error"); }
   }
 
@@ -136,7 +142,7 @@ export default function LeavesPage() {
     <div className="space-y-6 animate-in">
       <PageHeader
         title="الاستئذان والإجازات العارضة"
-        subtitle={`استئذان: ${limits.hours} ساعات شهرياً · إجازة عارضة: ${limits.casualDays} أيام سنوياً — العام ${YEAR}`}
+        subtitle={`استئذان: ${limits.hours} ساعات شهرياً (بحد أقصى ${limits.perRequest} للمرة) · إجازة عارضة: ${limits.casualDays} أيام سنوياً — العام ${YEAR}`}
         icon={<Clock size={26} />}
         action={
           <button
@@ -160,24 +166,24 @@ export default function LeavesPage() {
       {/* kind switch */}
       <div className="flex gap-2" role="group" aria-label="نوع السجل">
         {([["استئذان (ساعات)", false], ["إجازة عارضة (أيام)", true]] as const).map(([label, v]) => (
-          <button key={label} aria-pressed={casual === v} onClick={() => { setCasual(v); setLimitDraft(""); }}
+          <button key={label} aria-pressed={casual === v} onClick={() => setCasual(v)}
             className={casual === v ? "btn-primary" : "btn-ghost"}>{label}</button>
         ))}
       </div>
 
       {/* admin: allowance control */}
-      {admin && (
-        <div className="card p-5 flex items-center gap-3 flex-wrap">
+      {admin && controls.map((c) => (
+        <div key={c.key} className="card p-5 flex items-center gap-3 flex-wrap">
           <div className="flex-1 min-w-48">
-            <h2 className="section-title !text-base">{casual ? "رصيد الإجازة العارضة السنوي" : "الحد الشهري للاستئذان"}</h2>
-            <p className="text-xs text-[#7A6A58]">الحالي: <b className="text-primary font-sans">{casual ? limits.casualDays : limits.hours}</b> {casual ? "يوم لكل موجّه في السنة" : "ساعات لكل موجّه في الشهر"}</p>
+            <h2 className="section-title !text-base">{c.title}</h2>
+            <p className="text-xs text-[#7A6A58]">الحالي: <b className="text-primary font-sans">{limits[c.key]}</b> {c.note}</p>
           </div>
-          <label htmlFor="limit" className="sr-only">القيمة الجديدة</label>
-          <input id="limit" type="number" min={0} max={200} step={casual ? 1 : 0.5} inputMode="decimal" value={limitDraft}
-            onChange={(e) => setLimitDraft(e.target.value)} placeholder={casual ? "عدد الأيام" : "عدد الساعات"} className="field !w-36 font-sans" dir="ltr" />
-          <button onClick={saveLimit} className="btn-primary">حفظ الحد</button>
+          <label htmlFor={`limit-${c.key}`} className="sr-only">القيمة الجديدة — {c.title}</label>
+          <input id={`limit-${c.key}`} type="number" min={0} max={200} step={casual ? 1 : 0.5} inputMode="decimal" value={drafts[c.key] ?? ""}
+            onChange={(e) => setDrafts({ ...drafts, [c.key]: e.target.value })} placeholder={casual ? "عدد الأيام" : "عدد الساعات"} className="field !w-36 font-sans" dir="ltr" />
+          <button onClick={() => saveLimit(c.key)} className="btn-primary">حفظ الحد</button>
         </div>
-      )}
+      ))}
 
       {/* month + supervisor filter */}
       <div className="flex items-center gap-3 flex-wrap">

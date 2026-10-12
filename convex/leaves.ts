@@ -3,12 +3,14 @@ import { v } from "convex/values";
 import { getAuthUser, canSeeAll, isAdmin, requireAdminMutation, logAudit } from "./permissions";
 
 // Ministry allowances — editable from the page
-const KEYS = { hours: "leave.limitHours", casualDays: "leave.casualDays" } as const;
-const DEFAULTS = { hours: 10, casualDays: 10 }; // permission hours per month, casual-leave days per academic year
+const KEYS = { hours: "leave.limitHours", casualDays: "leave.casualDays", perRequest: "leave.maxHoursPerRequest" } as const;
+// permission hours per month, casual-leave days per academic year, max hours of a single permission
+const DEFAULTS = { hours: 10, casualDays: 10, perRequest: 3 };
+type LimitKey = keyof typeof KEYS;
 
 async function readLimits(ctx: QueryCtx) {
   const out = { ...DEFAULTS };
-  for (const k of ["hours", "casualDays"] as const) {
+  for (const k of Object.keys(KEYS) as LimitKey[]) {
     const row = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", KEYS[k])).first();
     if (row) out[k] = Number(row.value);
   }
@@ -22,7 +24,7 @@ export const limit = query({
 });
 
 export const setLimit = mutation({
-  args: { key: v.union(v.literal("hours"), v.literal("casualDays")), value: v.number(), token: v.optional(v.string()) },
+  args: { key: v.union(v.literal("hours"), v.literal("casualDays"), v.literal("perRequest")), value: v.number(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const admin = await requireAdminMutation(ctx, args.token);
     if (!Number.isFinite(args.value) || args.value < 0 || args.value > 200) throw new Error("القيمة غير صحيحة");
@@ -31,7 +33,9 @@ export const setLimit = mutation({
     if (ex) await ctx.db.patch(ex._id, { value, updatedAt: Date.now(), updatedBy: admin._id });
     else await ctx.db.insert("settings", { key: KEYS[args.key], value, updatedAt: Date.now(), updatedBy: admin._id });
     await logAudit(ctx, admin, "update", "settings", undefined,
-      args.key === "hours" ? `ضبط حد الاستئذان الشهري = ${value} ساعة` : `ضبط رصيد الإجازة العارضة السنوي = ${value} يوم`);
+      args.key === "hours" ? `ضبط حد الاستئذان الشهري = ${value} ساعة`
+        : args.key === "perRequest" ? `ضبط أقصى مدة للاستئذان الواحد = ${value} ساعة`
+        : `ضبط رصيد الإجازة العارضة السنوي = ${value} يوم`);
   },
 });
 
@@ -87,6 +91,7 @@ export const create = mutation({
     const reason = args.reason.trim();
     if (reason.length > 300) throw new Error("السبب طويل جداً (300 حرف كحد أقصى)");
 
+    const limits = await readLimits(ctx);
     let amount;
     if (args.kind === "casual") {
       const days = args.days ?? 0;
@@ -98,7 +103,7 @@ export const create = mutation({
       if (!time.test(toTime)) throw new Error("يرجى ملء خانة: إلى الساعة");
       const minutes = toMin(toTime) - toMin(fromTime);
       if (minutes <= 0) throw new Error("وقت النهاية يجب أن يكون بعد وقت البداية");
-      if (minutes > 8 * 60) throw new Error("مدة الاستئذان لا تتجاوز 8 ساعات");
+      if (minutes > limits.perRequest * 60) throw new Error(`مدة الاستئذان الواحد لا تتجاوز ${limits.perRequest} ساعات`);
       if (!reason) throw new Error("يرجى ملء خانة: السبب");
       amount = { fromTime, toTime, minutes };
     }
@@ -106,7 +111,6 @@ export const create = mutation({
     // Hard stop when the allowance is used up: hours per calendar month, casual days per academic year.
     // Pending requests hold balance; rejected ones do not.
     const casual = args.kind === "casual";
-    const limits = await readLimits(ctx);
     const cap = casual ? limits.casualDays : limits.hours * 60;
     const size = casual ? amount.days ?? 0 : amount.minutes;
     const used = (await ctx.db.query("leavePermissions")
