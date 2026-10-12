@@ -1,4 +1,6 @@
-import { query, mutation, QueryCtx } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
+import { recomputeForSupervisor } from "./activity";
 import { v } from "convex/values";
 import { getAuthUser, canSeeAll, isAdmin, requireAdminMutation, logAudit } from "./permissions";
 
@@ -65,6 +67,29 @@ export const list = query({
   },
 });
 
+// An approved casual leave shows up in the daily activity log (and so in the weekly visits sheet):
+// one "CL" entry per working day, never overwriting what is already logged.
+async function mirrorCasual(
+  ctx: MutationCtx,
+  leave: Pick<Doc<"leavePermissions">, "supervisorId" | "academicYear" | "date" | "days">,
+  by: Id<"users">,
+) {
+  const d = new Date(leave.date + "T00:00:00Z");
+  for (let left = leave.days ?? 0; left > 0; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (d.getUTCDay() === 5 || d.getUTCDay() === 6) continue; // Friday / Saturday
+    left--;
+    const date = d.toISOString().slice(0, 10);
+    const taken = await ctx.db.query("activityLogs")
+      .withIndex("by_supervisor_date", (q) => q.eq("supervisorId", leave.supervisorId).eq("date", date)).first();
+    if (!taken) {
+      await ctx.db.insert("activityLogs", {
+        supervisorId: leave.supervisorId, date, code: "CL", academicYear: leave.academicYear, enteredBy: by,
+      });
+    }
+  }
+  await recomputeForSupervisor(ctx, leave.supervisorId, leave.academicYear);
+}
+
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 
 export const create = mutation({
@@ -124,11 +149,15 @@ export const create = mutation({
         : `لا يمكن التسجيل: المتبقي من رصيد الاستئذان هذا الشهر ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} ساعة فقط`);
     }
 
-    return ctx.db.insert("leavePermissions", {
+    const id = await ctx.db.insert("leavePermissions", {
       supervisorId, academicYear: args.academicYear, date: args.date, ...amount, reason,
       status: isAdmin(user) ? "approved" : "pending", // recorded by the department = already approved
       createdBy: user._id, createdAt: Date.now(),
     });
+    if (casual && isAdmin(user)) {
+      await mirrorCasual(ctx, { supervisorId, academicYear: args.academicYear, date: args.date, days: size }, user._id);
+    }
+    return id;
   },
 });
 
@@ -140,6 +169,7 @@ export const decide = mutation({
     const row = await ctx.db.get(args.id);
     if (!row) throw new Error("السجل غير موجود");
     await ctx.db.patch(args.id, { status: args.approve ? "approved" : "rejected" });
+    if (args.approve && row.kind === "casual" && row.status !== "approved") await mirrorCasual(ctx, row, admin._id);
     await logAudit(ctx, admin, "update", "leavePermission", args.id,
       `${args.approve ? "اعتماد" : "رفض"} ${row.kind === "casual" ? "إجازة عارضة" : "استئذان"} بتاريخ ${row.date}`);
   },

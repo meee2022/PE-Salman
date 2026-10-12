@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/AuthProvider";
 import { Id } from "@/convex/_generated/dataModel";
@@ -17,6 +17,7 @@ import { useActiveYear } from "@/hooks/useActiveYear";
 import { EXCEL_ACTIVITY_DATA } from "@/lib/excelActivityData";
 import { getWeekInfo } from "@/lib/weeklySchedule";
 import { exportToExcel } from "@/lib/exportExcel";
+import { downloadWeeklyVisits } from "@/lib/exportWeeklyVisits";
 
 type Code =
   | "OF" | "VS" | "CL" | "LV" | "SL" | "TR" | "MT" | "AC"
@@ -131,7 +132,10 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
   const { token, user } = useAuth();
   const isAdmin = ["admin","superadmin"].includes(user?.role ?? "");
   const isSupervisor = user?.role === "supervisor";
-  const readOnly = isSupervisor; // الموجه يرى فقط، لا يعدّل
+  const readOnly = isSupervisor; // no bulk tools for a supervisor
+  const ownId = isSupervisor ? user?.supervisorId : undefined; // a supervisor fills only their own row
+  const convex = useConvex();
+  const [exporting, setExporting] = useState(false);
 
   const supervisors = useQuery(api.supervisors.list, token ? { token } : "skip");
   const logActivity   = useMutation(api.activity.logActivity);
@@ -322,6 +326,19 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
     return { displaySups: display, groupIds: gids };
   }, [supervisors]);
 
+  // Whole academic year in the ministry's weekly-sheet layout (the Teams file)
+  async function downloadTeams() {
+    setExporting(true);
+    try {
+      const [y1, y2] = YEAR.split("-");
+      const all = await convex.query(api.activity.logsInRange, { start: `${y1}-08-01`, end: `${y2}-07-31`, token: token ?? undefined });
+      const ok = downloadWeeklyVisits(
+        displaySups.map((s) => ({ name: s.name, ids: groupIds.get(s._id as string) ?? [s._id as string] })),
+        all, `جدول الزيارات الأسبوعي - التربية البدنية ${YEAR}`);
+      if (!ok) showToast("لا توجد بيانات مسجّلة لهذا العام");
+    } finally { setExporting(false); }
+  }
+
   if (!supervisors || logs === undefined) {
     return (
       <div className="flex items-center justify-center h-72">
@@ -364,8 +381,15 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
           {/* شارة "عرض للقراءة فقط" للموجه */}
           {readOnly && (
             <span className="text-[10px] font-extrabold px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200">
-              سجلك الخاص — للاطلاع فقط
+              سجلك الخاص — اضغط على اليوم لتسجيله
             </span>
+          )}
+          {!isSupervisor && (
+            <button onClick={downloadTeams} disabled={exporting}
+              className="btn-ghost hover:ring-1 hover:ring-gold/30 flex items-center gap-1.5 text-xs font-extrabold !py-2 !px-4 disabled:opacity-60">
+              <FileDown size={14} />
+              {exporting ? "جاري التجهيز..." : "تنزيل جدول الزيارات (Teams)"}
+            </button>
           )}
           {isAdmin && (
             <button
@@ -527,6 +551,7 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                 const sel = selected.has(sup._id);
                 // كل IDs المرتبطة بهذا الموجه (أصل + مكررات shortKey)
                 const supAllIds: string[] = groupIds.get(sup._id as string) ?? [sup._id as string];
+                const locked = !isAdmin && !(ownId && supAllIds.includes(ownId));
                 return (
                   <tr key={sup._id} className={`hover:bg-gold/5 transition-colors border-b border-gold/5 last:border-b-0 ${sel ? "!bg-gold/[0.07]" : ""}`}>
                     <td className={`sticky right-0 z-10 px-2 sm:px-4 py-3 font-extrabold text-[#2A1418] text-xs border-l border-gold/15 whitespace-nowrap transition-colors max-w-[112px] sm:max-w-none overflow-hidden text-ellipsis ${sel ? "bg-[#FBF4E9]" : "bg-white"}`}>
@@ -553,21 +578,21 @@ function EntryGrid({ mode }: { mode: "week" | "month" }) {
                           style={{ borderRight: isNewWeek ? "2px solid rgba(201,169,110,0.4)" : undefined }}
                         >
                           <button
-                            disabled={bulkMode || readOnly}
-                            onClick={readOnly ? undefined : () => {
-                              setPicker({ supId: sup._id, supName: sup.name, ds: d.ds,
+                            disabled={bulkMode || locked}
+                            onClick={locked ? undefined : () => {
+                              setPicker({ supId: (ownId ?? sup._id) as Id<"supervisors">, supName: sup.name, ds: d.ds,
                                 label: `${d.wd} ${d.dayNum} ${AR_MONTHS[d.monthIdx]}`,
                                 currentCode: entry?.code, currentNote: entry?.notes });
                               setPickerNote(entry?.notes ?? "");
                             }}
                             title={entry?.notes || meta?.label}
                             className={`w-full ${cellW} mx-auto rounded-xl text-[9px] font-extrabold transition-all border flex flex-col items-center justify-center gap-0 py-1 px-0.5 ${
-                              bulkMode || readOnly ? "cursor-default border-transparent" : "hover:scale-[1.04] hover:z-10 relative"
+                              bulkMode || locked ? "cursor-default border-transparent" : "hover:scale-[1.04] hover:z-10 relative"
                             } ${
                               meta
                                 ? meta.cell
                                 : "text-stone-300 border-dashed border-stone-200 bg-stone-50/10 " +
-                                  (bulkMode || readOnly ? "" : "hover:bg-gold/10 hover:border-gold/30 hover:text-gold")
+                                  (bulkMode || locked ? "" : "hover:bg-gold/10 hover:border-gold/30 hover:text-gold")
                             }`}
                             style={{ minHeight: mode === "week" ? "50px" : "40px" }}
                           >

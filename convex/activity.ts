@@ -5,8 +5,15 @@ import type { MutationCtx } from "./_generated/server";
 
 const LEAVE_CODES = new Set(["LV", "SL", "AB", "WP", "HC", "CA", "CL"]);
 
+// Admins edit anyone's daily log; a supervisor edits only their own
+async function requireOwnOrAdmin(ctx: MutationCtx, token: string | undefined, supervisorId: string) {
+  const user = await getAuthUser(ctx, token);
+  if (user?.role === "supervisor" && user.supervisorId === supervisorId) return user;
+  return requireAdminMutation(ctx, token);
+}
+
 // ─── إعادة حساب الملخص السنوي لموجه واحد من سجلات اليومية ───────
-async function recomputeForSupervisor(
+export async function recomputeForSupervisor(
   ctx: MutationCtx,
   supervisorId: string,
   academicYear: string
@@ -174,7 +181,7 @@ export const bulkClear = mutation({
 export const clearActivity = mutation({
   args: { supervisorId: v.id("supervisors"), date: v.string(), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    await requireAdminMutation(ctx, args.token);
+    await requireOwnOrAdmin(ctx, args.token, args.supervisorId);
     const existing = await ctx.db
       .query("activityLogs")
       .withIndex("by_supervisor_date", (q) =>
@@ -391,7 +398,9 @@ export const logActivity = mutation({
     token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAdminMutation(ctx, args.token);
+    await requireOwnOrAdmin(ctx, args.token, args.supervisorId);
+    if (!/^d{4}-d{2}-d{2}$/.test(args.date)) throw new Error("تاريخ غير صحيح");
+    if ((args.notes?.length ?? 0) > 200) throw new Error("الملاحظة طويلة جداً (200 حرف كحد أقصى)");
     const existing = await ctx.db
       .query("activityLogs")
       .withIndex("by_supervisor_date", (q) =>
